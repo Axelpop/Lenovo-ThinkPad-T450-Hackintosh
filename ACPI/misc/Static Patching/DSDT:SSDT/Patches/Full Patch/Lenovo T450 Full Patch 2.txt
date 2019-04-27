@@ -1,0 +1,1406 @@
+# James Anthony Sassu (Sass86oh) January 2019
+#
+#
+# *** I am not the author of any of these patches or patch methods, I simply compiled all of the ones which 
+# my device required and then just swapped out device names in existing patches in order to achieve the same
+# results of the original patch with other devices. The majority of these patches come from RehabMan's personal 
+# GitHub page and as such all credit should go to him for whatever code is present in this patch.
+# Its his hard work that made this possible, all I did was copy and paste a bunch of it into one patch ***
+#
+#
+# Lenovo T450 20BV Intel Core I7 5600U Intel HD 5500 Full DSDT Patch with proper macOS Device names and additions.
+# This patch was compiled by myself for my own hardware to make life easier for fresh installs.
+# Unless your machine is almost a perfect match to mine then I would be very cautious about attempting to use this patch
+# without having some sort of knowledge of how to troubleshoot startup issues and how to drop custom DSDT's in a bind in # order to get back into the system successfully
+# The majority of whats in here is in-fact the recommended universal fixes for almost all laptops but I've also included a number of patches that I created from existing
+# patches which are specific to functions I wanted in particular (mainly the dual battery patch, addition of battery c, IMEI MCHC DTGP and PXSX additions, #function keys, Airport, renames,
+# and a few other patches which I like to use. If you still want to use it I strongly advise you go through and comment out anything which is specific to my hardware or anything you aren’t
+# sure of its purpose. You're responsible for any damage to your hardware the same as I am responsible for any of my own....
+#
+#
+#                          FEEL FREE TO CHANGE THIS PATCH AND REPOST IT AS MUCH AS YOU WANT (Please leave the credit statement above)
+#
+#
+#     | Rename PCI0.VID to PCI0.IGPU(Cosmetic, Proper macOS Graphics Controller Label, and Enabled graphics power management)
+#
+#
+into device label VID parent_label PCI0 set_label begin IGPU end;
+into_all all code_regex PCI0\.VID_ replaceall_matched begin PCI0.IGPU end;
+into_all all code_regex PCI0\.VID replaceall_matched begin PCI0.IGPU end;
+into_all scope label \_SB.PCI0.VID.LCD0 set_label begin \_SB.PCI0.IGPU.LCD0 end;
+into_all scope label \_SB.PCI0.VID set_label begin \_SB.PCI0.IGPU end;
+#
+# DONE
+#
+#
+#     | Rename PCIO.PEG.VID to PCI0.PEG.IGFX (Consmetic, Give externeal display device its own proper identity)
+
+into device label VID parent_label PEG set_label begin IGFX end;
+into_all all code_regex PEG\.VID replaceall_matched begin PEG.IGFX end;
+into_all scope label \_SB.PCI0.PEG.VID set_label begin \_SB.PCI0.PEG.IGFX end;
+into_all all code_regex VID\. replaceall_matched begin IGFX. end;
+into_all all code_regex \(VID replaceall_matched begin (IGFX end;
+into_all all label VID parent_label PEG set_label begin IGFX end;
+#
+# DONE
+#
+#
+#      | Rename B0D3 to HDAU (Cosmetic, Proper macOS HDMI Device Label, Proper HDMI Audio Controller Label, Set proper Layout ID for Audio Codec)
+#
+#
+into device label B0D3 set_label begin HDAU end;
+#
+# DONE
+#
+#
+#      | Rename EXP devices to RP01-03 (Cosmetic, Proper macOS name for PCIe Lane Inputs, Helps with proper PCIe device functionality, Apple AirPort WiFi card configuration)
+#
+#
+into device label EXP1 set_label begin RP01 end;
+into device label EXP2 set_label begin RP02 end;
+into device label EXP3 set_label begin RP03 end;
+into_all all code_regex EXP1 replaceall_matched begin RP01 end;
+into_all all code_regex EXP2 replaceall_matched begin RP02 end;
+into_all all code_regex EXP3 replaceall_matched begin RP03 end;
+#
+# DONE
+#
+#
+#      | Add the missing PXSX nodes to RP01 - RP03 PCI BUS Inputs Devices (Cosmetic, Proper macOS PCI Bus Injection nodes, Helps with most AirPort WiFi patches available online)
+#
+#
+into device label PXSX parent_label RP01 remove_entry;
+into device label RP01 insert begin
+Device (PXSX)\n
+{\n
+	Name (_ADR, Zero)\n
+}
+end;
+into device label PXSX parent_label RP02 remove_entry;
+into device label RP02 insert begin
+Device (PXSX)\n
+{\n
+	Name (_ADR, Zero)\n
+}
+end;
+into device label PXSX parent_label RP03 remove_entry;
+into device label RP03 insert begin
+Device (PXSX)\n
+{\n
+	Name (_ADR, Zero)\n
+}
+end;
+#
+# DONE
+#
+#
+#      | Rename SAT1 and SAT2 to SATA and SATB (Cosmetic, Proper macOS AHCI and M.2 SATA Bus Labels, Helps with Machine Stability)
+#
+#
+into device label SAT1 set_label begin SATA end;
+into device label SAT2 set_label begin SATB end;
+into_all all code_regex SAT1 replaceall_matched begin SATA end;
+#
+# DONE
+#
+#
+#      | Rename LPC_ to LPCB (Cosmetic, Proper macOS LPCB Device Label, Enables certain Hot patches like BATC SSDT, and Thermal Management Functionality)
+#
+#
+into_all scope label _SB.PCI0.LPC.EC.HKEY set_label begin _SB.PCI0.LPCB.EC.HKEY end;
+into_all scope label _SB.PCI0.LPC.EC set_label begin _SB.PCI0.LPCB.EC end;
+into device label LPC set_label begin LPCB end;
+into_all all code_regex LPC\. replaceall_matched begin LPCB. end;
+into_all all code_regex LPC_\. replaceall_matched begin LPCB. end;
+into_all scope label PCI0.LPC.EC set_label begin PCI0.LPCB.EC end;
+into_all scope label \_SB.PCI0.LPC.EC.HKEY set_label begin \_SB.PCI0.LPCB.EC.HKEY end;
+into_all scope label \_SB.PCI0.LPC.EC set_label begin \_SB.PCI0.LPCB.EC end;
+#
+# DONE
+#
+#
+#     | Rename LPCB.KBD to LPCB.PS2K (Cosmetic, PS2 Bus Location (Not In Macs), Enables Synaptic TrackPoint Functionality, and Permanently Activates Magic Trackpad Settings with RHM’s SSDT-PS2K.aml)
+#
+into device label KBD set_label begin PS2K end;
+#
+# DONE
+#
+#
+#     | Rename PEG to PEG0 (Cosmetic, Proper macOS Extended Graphics Controller Label, HDMI and DVI Out Name, No real added benefits)
+#
+#
+into device label PEG set_label begin PEG0 end;
+into_all all code_regex \.PEG\. replaceall_matched begin .PEG0. end;
+into_all all code_regex PEG\. replaceall_matched begin PEG0. end;
+into_all all code_regex PEG\. replaceall_matched begin PEG0. end;
+into_all scope label \_SB.PCI0.PEG.IGFX set_label begin \_SB.PCI0.PEG0.IGFX end;
+into_all scope label \_SB.PCI0.PEG.VID set_label begin \_SB.PCI0.PEG0.VID end;
+into_all scope label \_SB.PCI0.PEG.VID_ set_label begin \_SB.PCI0.PEG0.VID_ end;
+#
+# DONE
+#
+#
+#    | Rename IGBE to GIGE (Cosmetic, Proper macOS Gigabit Ethernet Controller Label, No added functions just cosmetic)
+#
+# 
+into device label IGBE set_label begin GIGE end;
+#
+# DONE
+#
+#
+#   | Rename SMBU to SBUS (Cosmetic, Proper macOS SMBUS Controller Label)
+#
+#
+into device label SMBU set_label begin SBUS end;
+into_all all code_regex SMBU replaceall_matched begin SBUS end;
+#
+# DONE
+#
+#
+#   | Rename PIC to IPIC (Cosmetic, Proper macOS IPIC Controller Label)
+#
+#
+into device label PIC set_label begin IPIC end;
+#
+# DONE
+#
+#
+#   | Rename EHC1 to EH01 (Cosmetic, Proper macOS Enhanced USB Controller Label, Proper USB Injection and Speed Configurations)
+#
+#
+into device label EHC1 set_label begin EH01 end;
+into_all all code_regex EHC1 replaceall_matched begin EH01 end;
+#
+# DONE
+#
+#
+#   | System HPET Fix (Avoid AppleIntelCPUPowerManagement Kernel Panic)
+#
+#
+into method label _STA parent_hid PNP0103 remove_entry;
+into device name_hid PNP0103 code_regex Name\s\(_STA\,\s+0x0F\) remove_matched;
+into device name_hid PNP0103 insert
+begin
+Name (_STA, 0x0F)\n
+end;
+#
+into method label _CRS parent_hid PNP0103 remove_entry;
+into device name_hid PNP0103 insert
+begin
+Method (_CRS, 0, NotSerialized)\n
+{\n
+    Return (BUF0)\n
+}\n
+end;
+#
+# DONE
+#
+#
+#   | System Add Missing IMEI Device
+#
+#
+into device label PCI0 insert
+begin
+Device (IMEI)\n
+{\n
+	Name (_ADR, 0x00160000)\n
+	Method (_DSM, 4, NotSerialized)\n
+	{\n
+		Store (Package (0x02) {\n
+			"layout-id", Buffer(0x04) {0x3a,0x8c,0x00,0x00},\n
+		}, Local0)\n
+		DTGP (Arg0, Arg1, Arg2, Arg3, RefOf (Local0))\n
+		Return (Local0)\n
+	}\n
+}\n
+end;
+#
+# DONE
+#
+#
+#   | System IRQ Fix (Solves Issues With AppleALC Dynamic Audio Patching and Fixes Random Restarts after Waking Up)
+#
+#
+into device name_hid PNP0000 code_regex IRQNoFlags\s\(\)\n\s+\{(\d+)\} remove_matched;
+into device name_hid PNP0100 code_regex IRQNoFlags\s\(\)\n\s+\{(\d+)\} remove_matched;
+into device name_hid PNP0B00 code_regex IRQNoFlags\s\(\)\n\s+\{(\d+)\} remove_matched;
+into device name_hid PNP0103 code_regex IRQNoFlags\s\(\)\n\s+\{.*\} removeall_matched;
+into device name_hid PNP0103 code_regex Name\s\(([^,]+),\sResourceTemplate\s\(\).*\n\s+\{((?:.|\n)*)\}\) replace_matched
+begin
+Name (%1, ResourceTemplate()\n
+{\n
+    IRQNoFlags() { 0, 8, 11, 15 }\n
+%2
+})\n
+end;
+#
+# DONE
+#
+#
+#   | System Mutex Objects (Corrects all Mutex Objects that are declared with a non-zero sync level, Corrects failed battery status and other system functions)
+#
+#
+into_all all code_regex Mutex\s+\(([^,]*),\s+[^)]*\) replaceall_matched begin Mutex(%1, 0) end;
+into_all all code_regex Mutex\s+\(([^,]*),\s+[^)]*\) replaceall_matched begin Mutex(%1, 0) end;
+into_all all code_regex Mutex\s+\(([^,]*),\s+[^)]*\) replaceall_matched begin Mutex(%1, 0) end;
+into_all all code_regex Mutex\s+\(([^,]*),\s+[^)]*\) replaceall_matched begin Mutex(%1, 0) end;
+into_all all code_regex Mutex\s+\(([^,]*),\s+[^)]*\) replaceall_matched begin Mutex(%1, 0) end;
+into_all all code_regex Mutex\s+\(([^,]*),\s+[^)]*\) replaceall_matched begin Mutex(%1, 0) end;
+into_all all code_regex Mutex\s+\(([^,]*),\s+[^)]*\) replaceall_matched begin Mutex(%1, 0) end;
+into_all all code_regex Mutex\s+\(([^,]*),\s+[^)]*\) replaceall_matched begin Mutex(%1, 0) end;
+into_all all code_regex Mutex\s+\(([^,]*),\s+[^)]*\) replaceall_matched begin Mutex(%1, 0) end;
+into_all all code_regex Mutex\s+\(([^,]*),\s+[^)]*\) replaceall_matched begin Mutex(%1, 0) end;
+#
+# DONE
+#
+#
+#   | System _OSI Set To Windows XP,Vista,7,8,10 or Linux (Fixes multiple DSDT related problems)
+#
+#
+# 1.) Microsoft Windows Vista (2006)
+#
+#into method label _INI parent_label _SB.PCI0 code_regex If\s+\([\\]?_OSI\s+\(\"Windows\s2006\"\)\) replace_matched begin If(LOr(_OSI("Darwin"),_OSI("Windows 2006"))) end;
+#into method label _INI parent_label _SB code_regex If\s+\([\\]?_OSI\s+\(\"Windows\s2006\"\)\) replace_matched begin If(LOr(_OSI("Darwin"),_OSI("Windows 2006"))) end;
+#into_all method code_regex If\s+\([\\]?_OSI\s+\(\"Windows\s2006\"\)\) replace_matched begin If(LOr(_OSI("Darwin"),_OSI("Windows 2006"))) end;
+#
+#
+# 2.) Microsoft Windows 7 (2009)
+#
+#into_all method code_regex If\s+\([\\]?_OSI\s+\(\"Windows\s2009\"\)\) replace_matched begin If(LOr(_OSI("Darwin"),_OSI("Windows 2009"))) end;
+#
+#
+# 3.) Microsoft Windows 8 (2012)
+#
+#into_all method code_regex If\s+\([\\]?_OSI\s+\(\"Windows\s2012\"\)\) replace_matched begin If(LOr(_OSI("Darwin"),_OSI("Windows 2012"))) end;
+#
+#
+# 4.) Microsoft Windows 10 (2015)
+#
+into_all method code_regex If\s+\([\\]?_OSI\s+\(\"Windows\s2015\"\)\) replace_matched begin If(LOr(_OSI("Darwin"),_OSI("Windows 2015"))) end;
+#
+#
+# 5.) Ubuntu Linux 
+#
+#into_all method code_regex If\s+\([\\]?_OSI\s+\(\"Linux\"\)\) replace_matched begin If(LOr(_OSI("Darwin"),_OSI("Linux"))) end;
+#
+# DONE
+#
+#
+#     | System P-Not Fix (Fix possible EC/AC adapter calls present in CPU SSDTs that are usually dropped)
+#
+#
+into method label PNOT replace_content begin // nothing end;
+into method label PPNT replace_content begin // nothing end;
+into method label PNTF replace_content begin // nothing end;
+#
+# DONE
+#
+#
+#     | System RTC Fix (Various DSDT fixes)
+#
+#
+into device name_hid PNP0B00 code_regex (IO\s\((?:\s*[^,]+,\s*(?:\/\/\s.*)?\s*\n)+\s*)(\dx\d+)(,\s*(?:\/\/\s.*)?\s*\n\s*\)) replace_matched begin %10x02%3 end;
+#
+# DONE
+#
+#
+#     | System SBUS Fix (Add missing node needed into System Bus)
+#
+#
+into device label BUS0 parent_adr 0x001F0003 remove_entry;
+into device name_adr 0x001F0003 insert
+begin
+Device (BUS0)\n
+{\n
+    Name (_CID, "smbus")\n
+    Name (_ADR, Zero)\n
+    Device (DVL0)\n
+    {\n
+        Name (_ADR, 0x57)\n
+        Name (_CID, "diagsvault")\n
+        Method (_DSM, 4, NotSerialized)\n
+        {\n
+            If (LEqual (Arg2, Zero)) { Return (Buffer() { 0x03 } ) }\n
+            Return (Package() { "address", 0x57 })\n
+        }\n
+    }\n
+}\n
+end;
+#
+# DONE
+#
+#
+#     | System Wak_2 Method (Fixes errors caused after resuming system from sleep or memory suspend)
+#
+#
+into method label _WAK code_regex ([\s\S]*) replace_matched
+begin
+If (LOr(LLess(Arg0,1),LGreater(Arg0,5))) { Store(3,Arg0) }\n
+%1
+end;
+#
+into method label \_WAK code_regex ([\s\S]*) replace_matched
+begin
+If (LOr(LLess(Arg0,1),LGreater(Arg0,5))) { Store(3,Arg0) }\n
+%1
+end;
+#
+# DONE
+#
+#
+#     | Lenovo T450 LED Blinking Fix (Fix blinking light on power button)
+#
+#
+into method label \_WAK code_regex If.*LOr.*Equal.*Arg0.*LGreaterEqual.*Arg0.*0x05.*\n.*\{\n.*Return.*WAKI.*\n.*\} remove_matched;
+into method label \_WAK code_regex \n\s+If\s\(LEqual\s\(Arg0,3\)\)\n\s+\{\n\s+\\_SI._SST.*\n\s+\}\n remove_matched;
+into method label \_WAK code_regex (.*Return\s+\(.*) replace_matched
+begin
+\n
+        If (LEqual (Arg0,3))\n
+        {\n
+            \\_SI._SST (0x01)\n
+        }\n
+\n
+%1
+end;
+#
+# DONE
+#
+#
+#     | Lenovo T450 USB Power Patch (Fix power supply issues to USB ports)
+#
+#
+into device label IGBE code_regex (Name.*PRW.*\n.*\n.*0x6D.*)\n.*[34] replaceall_matched
+begin
+%1\n
+                    0x00
+end;
+
+into device label XHCI code_regex (Name.*PRW.*\n.*\n.*0x6D.*)\n.*[34] replaceall_matched
+begin
+%1\n
+                    0x00
+end;
+
+into device label EH01 code_regex (Name.*PRW.*\n.*\n.*0x6D.*)\n.*[34] replaceall_matched
+begin
+%1\n
+                    0x00
+end;
+into device label GIGE code_regex (Name.*PRW.*\n.*\n.*0x6D.*)\n.*[34] replaceall_matched
+begin
+%1\n
+                    0x00
+end;
+
+into device label XHCI code_regex (Name.*PRW.*\n.*\n.*0x6D.*)\n.*[34] replaceall_matched
+begin
+%1\n
+                    0x00
+end;
+
+into device label EHC1 code_regex (Name.*PRW.*\n.*\n.*0x6D.*)\n.*[34] replaceall_matched
+begin
+%1\n
+                    0x00
+end;
+#
+# DONE
+#
+#
+#      | Lenovo T450 Function Keys Fix (Remap the Function Keys to the proper scan-codes for proper functions when used in macOS)
+#
+#
+into method label _Q15 replace_content
+begin
+    Notify(\_SB.PCI0.LPCB.PS2K, 0x0205)\n
+    Notify(\_SB.PCI0.LPCB.PS2K, 0x0285)\n
+end;
+
+# _Q14 (Fn+F6) brightness up key
+into method label _Q14 replace_content
+begin
+    Notify(\_SB.PCI0.LPCB.PS2K, 0x0206)\n
+    Notify(\_SB.PCI0.LPCB.PS2K, 0x0286)\n
+end;
+
+# _Q6A (Fn+F4) Microphone Mute key
+into method label _Q6A replace_content
+begin
+    Notify(\_SB.PCI0.LPCB.PS2K, 0x0168)\n
+    Notify(\_SB.PCI0.LPCB.PS2K, 0x01e8)\n
+end;
+
+# _Q16 (Fn+F7) Projector / Mirror mode key
+into method label _Q16 replace_content
+begin
+    Notify(\_SB.PCI0.LPCB.PS2K, 0x026e)\n
+    Notify(\_SB.PCI0.LPCB.PS2K, 0x02ee)\n
+end;
+
+# _Q64 (Fn+F8) Wireless disable key
+into method label _Q64 replace_content
+begin
+    Notify(\_SB.PCI0.LPCB.PS2K, 0x0169)\n
+    Notify(\_SB.PCI0.LPCB.PS2K, 0x01e9)\n
+end;
+
+# _Q66 (Fn+F9) Settings key
+into method label _Q66 replace_content
+begin
+    Notify(\_SB.PCI0.LPCB.PS2K, 0x0164)\n
+    Notify(\_SB.PCI0.LPCB.PS2K, 0x01e4)\n
+end;
+
+# _Q67 (Fn+F10) Spotlight key
+into method label _Q67 replace_content
+begin
+    Notify(\_SB.PCI0.LPCB.PS2K, 0x0165)\n
+    Notify(\_SB.PCI0.LPCB.PS2K, 0x01e5)\n
+end;
+
+# _Q68 (Fn+F11) App switcher key
+into method label _Q68 replace_content
+begin
+    Notify(\_SB.PCI0.LPCB.PS2K, 0x0166)\n
+    Notify(\_SB.PCI0.LPCB.PS2K, 0x01e6)\n
+end;
+
+# _Q69 (Fn+F12) Launchpad key
+into method label _Q69 replace_content
+begin
+    Notify(\_SB.PCI0.LPCB.PS2K, 0x0167)\n
+    Notify(\_SB.PCI0.LPCB.PS2K, 0x01e7)\n
+#end;
+#into method label _Q15 replace_content
+#begin
+#    Notify(\_SB.PCI0.LPC.KBD, 0x0205)\n
+#    Notify(\_SB.PCI0.LPC.KBD, 0x0285)\n
+#end;
+
+# _Q14 (Fn+F6) brightness up key
+#into method label _Q14 replace_content
+#begin
+#    Notify(\_SB.PCI0.LPC.KBD, 0x0206)\n
+#    Notify(\_SB.PCI0.LPC.KBD, 0x0286)\n
+#end;
+
+# _Q6A (Fn+F4) Microphone Mute key
+#into method label _Q6A replace_content
+#begin
+#    Notify(\_SB.PCI0.LPC.KBD, 0x0168)\n
+#    Notify(\_SB.PCI0.LPC.KBD, 0x01e8)\n
+#end;
+
+# _Q16 (Fn+F7) Projector / Mirror mode key
+#into method label _Q16 replace_content
+#begin
+#    Notify(\_SB.PCI0.LPC.KBD, 0x026e)\n
+#    Notify(\_SB.PCI0.LPC.KBD, 0x02ee)\n
+#end;
+
+# _Q64 (Fn+F8) Wireless disable key
+#into method label _Q64 replace_content
+#begin
+#    Notify(\_SB.PCI0.LPC.KBD, 0x0169)\n
+#    Notify(\_SB.PCI0.LPC.KBD, 0x01e9)\n
+#end;
+
+# _Q66 (Fn+F9) Settings key
+#into method label _Q66 replace_content
+#begin
+#    Notify(\_SB.PCI0.LPC.KBD, 0x0164)\n
+#    Notify(\_SB.PCI0.LPC.KBD, 0x01e4)\n
+#end;
+
+# _Q67 (Fn+F10) Spotlight key
+#into method label _Q67 replace_content
+#begin
+#    Notify(\_SB.PCI0.LPC.KBD, 0x0165)\n
+#    Notify(\_SB.PCI0.LPC.KBD, 0x01e5)\n
+#end;
+
+# _Q68 (Fn+F11) App switcher key
+#into method label _Q68 replace_content
+#begin
+#    Notify(\_SB.PCI0.LPC.KBD, 0x0166)\n
+#    Notify(\_SB.PCI0.LPC.KBD, 0x01e6)\n
+#end;
+
+# _Q69 (Fn+F12) Launchpad key
+#into method label _Q69 replace_content
+#begin
+#    Notify(\_SB.PCI0.LPC.KBD, 0x0167)\n
+#    Notify(\_SB.PCI0.LPC.KBD, 0x01e7)\n
+#end;
+#
+# DONE
+#
+#
+#     | Lenovo T450 Graphics PNLF Fix (Adds the brightness buttons functionality back with AppleBacklightFixUP Lilu Plugin)
+#
+#
+into_all device label PNLF remove_entry;
+into_all device name_adr 0x00020000 code_regex (OperationRegion\s\(RMPC,\sPCI_Config[^\}]*\}) remove_matched;
+#
+into device name_adr 0x00020000 insert
+begin
+OperationRegion (RMPC, PCI_Config, 0x10, 4)\n
+Field (RMPC, AnyAcc, NoLock, Preserve)\n
+{\n
+    BAR1,32,\n
+}\n
+Device (PNLF)\n
+{\n
+    // normal PNLF declares (note some of this probably not necessary)\n
+    Name (_ADR, Zero)\n
+    Name (_HID, EisaId ("APP0002"))\n
+    Name (_CID, "backlight")\n
+    Name (_UID, 15)\n
+    Name (_STA, 0x0B)\n
+    //define hardware register access for brightness\n
+    // lower nibble of BAR1 is status bits and not part of the address\n
+    OperationRegion (BRIT, SystemMemory, And(^BAR1, Not(0xF)), 0xe1184)\n
+    Field (BRIT, AnyAcc, Lock, Preserve)\n
+    {\n
+        Offset(0x48250),\n
+        LEV2, 32,\n
+        LEVL, 32,\n
+        Offset(0x70040),\n
+        P0BL, 32,\n
+        Offset(0xc8250),\n
+        LEVW, 32,\n
+        LEVX, 32,\n
+        Offset(0xe1180),\n
+        PCHL, 32,\n
+    }\n
+    // LMAX: use 0xad9/0x56c/0x5db to force OS X value\n
+    //       or use any arbitrary value\n
+    //       or use 0 to capture BIOS setting\n
+    Name (LMAX, 0xad9)\n
+    // KMAX: defines the unscaled range in the _BCL table below\n
+    Name (KMAX, 0xad9)\n
+    // _INI deals with differences between native setting and desired\n
+    Method (_INI, 0, NotSerialized)\n
+    {\n
+        // This 0xC value comes from looking what OS X initializes this\n
+        // register to after display sleep (using ACPIDebug/ACPIPoller)\n
+        Store(0xC0000000, LEVW)\n
+        // determine LMAX to use\n
+        If (LNot(LMAX)) { Store(ShiftRight(LEVX,16), LMAX) }\n
+        If (LNot(LMAX)) { Store(KMAX, LMAX) }\n
+        If (LNotEqual(LMAX, KMAX))\n
+        {\n
+            // Scale all the values in _BCL to the PWM max in use\n
+            Store(0, Local0)\n
+            While (LLess(Local0, SizeOf(_BCL)))\n
+            {\n
+                Store(DerefOf(Index(_BCL,Local0)), Local1)\n
+                Divide(Multiply(Local1,LMAX), KMAX,, Local1)\n
+                Store(Local1, Index(_BCL,Local0))\n
+                Increment(Local0)\n
+            }\n
+            // Also scale XRGL and XRGH values\n
+            Divide(Multiply(XRGL,LMAX), KMAX,, XRGL)\n
+            Divide(Multiply(XRGH,LMAX), KMAX,, XRGH)\n
+        }\n
+        // adjust values to desired LMAX\n
+        Store(ShiftRight(LEVX,16), Local1)\n
+        If (LNotEqual(Local1, LMAX))\n
+        {\n
+            Store(And(LEVX,0xFFFF), Local0)\n
+            If (LOr(LNot(Local0),LNot(Local1))) { Store(LMAX, Local0) Store(LMAX, Local1) }\n
+            Divide(Multiply(Local0,LMAX), Local1,, Local0)\n
+            //REVIEW: wait for vblank before setting new PWM config\n
+            //Store(P0BL, Local7)\n
+            //While (LEqual (P0BL, Local7)) {}\n
+            Store(Or(Local0,ShiftLeft(LMAX,16)), LEVX)\n
+        }\n
+    }\n
+    // _BCM/_BQC: set/get for brightness level\n
+    Method (_BCM, 1, NotSerialized)\n
+    {\n
+        // store new backlight level\n
+        Store(Match(_BCL, MGE, Arg0, MTR, 0, 2), Local0)\n
+        If (LEqual(Local0, Ones)) { Subtract(SizeOf(_BCL), 1, Local0) }\n
+        Store(Or(DerefOf(Index(_BCL,Local0)),ShiftLeft(LMAX,16)), LEVX)\n
+    }\n
+    Method (_BQC, 0, NotSerialized)\n
+    {\n
+        Store(Match(_BCL, MGE, And(LEVX, 0xFFFF), MTR, 0, 2), Local0)\n
+        If (LEqual(Local0, Ones)) { Subtract(SizeOf(_BCL), 1, Local0) }\n
+        Return(DerefOf(Index(_BCL, Local0)))\n
+    }\n
+    Method (_DOS, 1, NotSerialized)\n
+    {\n
+        // Note: Some systems have this defined in DSDT, so uncomment\n
+        // the next line if that is the case.\n
+        //External(^^_DOS, MethodObj)\n
+        ^^_DOS(Arg0)\n
+    }\n
+    // extended _BCM/_BQC for setting "in between" levels\n
+    Method (XBCM, 1, NotSerialized)\n
+    {\n
+        // store new backlight level\n
+        If (LGreater(Arg0, XRGH)) { Store(XRGH, Arg0) }\n
+        If (LAnd(Arg0, LLess(Arg0, XRGL))) { Store(XRGL, Arg0) }\n
+        Store(Or(Arg0,ShiftLeft(LMAX,16)), LEVX)\n
+    }\n
+    Method (XBQC, 0, NotSerialized)\n
+    {\n
+        Store(And(LEVX,0xFFFF), Local0)\n
+        If (LGreater(Local0, XRGH)) { Store(XRGH, Local0) }\n
+        If (LAnd(Local0, LLess(Local0, XRGL))) { Store(XRGL, Local0) }\n
+        Return(Local0)\n
+    }\n
+    // Set XOPT bit 0 to disable smooth transitions\n
+    // Set XOPT bit 1 to wait for native BacklightHandler\n
+    // Set XOPT bit 2 to force use of native BacklightHandler\n
+    Name (XOPT, 0x02)\n
+    // XRGL/XRGH: defines the valid range\n
+    Name (XRGL, 25)\n
+    Name (XRGH, 2777)\n
+    // _BCL: returns list of valid brightness levels\n
+    // first two entries describe ac/battery power levels\n
+    Name (_BCL, Package()\n
+    {\n
+        2777,\n
+        748,\n
+        0,\n
+        35, 39, 44, 50,\n
+        58, 67, 77, 88,\n
+        101, 115, 130, 147,\n
+        165, 184, 204, 226,\n
+        249, 273, 299, 326,\n
+        354, 383, 414, 446,\n
+        479, 514, 549, 587,\n
+        625, 665, 706, 748,\n
+        791, 836, 882, 930,\n
+        978, 1028, 1079, 1132,\n
+        1186, 1241, 1297, 1355,\n
+        1414, 1474, 1535, 1598,\n
+        1662, 1728, 1794, 1862,\n
+        1931, 2002, 2074, 2147,\n
+        2221, 2296, 2373, 2452,\n
+        2531, 2612, 2694, 2777,\n
+    })\n
+}\n
+end;
+#
+# DONE
+#
+#
+#      | Add Battery C For Unified Patch (Patch power-bridge to appear as on single battery instead of two separate ones and fix the report levels)
+#
+#
+into device label BATC parent_label EC remove_entry;
+into device label EC insert begin
+Device (BATC)\n
+{\n
+    Name (_HID, EisaId ("PNP0C0A"))  // _HID: Hardware ID\n
+    Name (_UID, 0x02)  // _UID: Unique ID\n
+    Method (_INI, 0, NotSerialized)  // _INI: Initialize\n
+    {\n
+        ^^BAT0._HID = Zero\n
+        ^^BAT1._HID = Zero\n
+    }\n
+    Method (CVWA, 3, NotSerialized)\n
+    {\n
+        If (Arg2)\n
+        {\n
+            Arg0 = ((Arg0 * 0x03E8) / Arg1)\n
+        }\n
+
+        Return (Arg0)\n
+    }\n
+
+    Method (_STA, 0, NotSerialized)  // _STA: Status\n
+    {\n
+        Return ((^^BAT0._STA () | ^^BAT1._STA ()))\n
+    }\n
+
+    Name (B0CO, Zero)\n
+    Name (B1CO, Zero)\n
+    Name (B0DV, Zero)\n
+    Name (B1DV, Zero)\n
+    Method (_BST, 0, NotSerialized)  // _BST: Battery Status\n
+    {\n
+        Local0 = ^^BAT0._BST ()\n
+        Local2 = ^^BAT0._STA ()\n
+        If ((0x1F == Local2))\n
+        {\n
+            Local4 = DerefOf (Local0 [0x02])\n
+            If ((!Local4 || (Ones == Local4)))\n
+            {\n
+                Local2 = Zero\n
+            }\n
+        }\n
+
+        Local1 = ^^BAT1._BST ()\n
+        Local3 = ^^BAT1._STA ()\n
+        If ((0x1F == Local3))\n
+        {\n
+            Local4 = DerefOf (Local1 [0x02])\n
+            If ((!Local4 || (Ones == Local4)))\n
+            {\n
+                Local3 = Zero\n
+            }\n
+        }\n
+
+        If (((0x1F != Local2) && (0x1F == Local3)))\n
+        {\n
+            Local0 = Local1\n
+            Local2 = Local3\n
+            Local3 = Zero\n
+        }\n
+
+        If (((0x1F == Local2) && (0x1F == Local3)))\n
+        {\n
+            Local4 = DerefOf (Local0 [Zero])\n
+            Local5 = DerefOf (Local1 [Zero])\n
+            If (((Local4 == 0x02) || (Local5 == 0x02)))\n
+            {\n
+                Local0 [Zero] = 0x02\n
+            }\n
+            ElseIf (((Local4 == One) || (Local5 == One)))\n
+            {\n
+                Local0 [Zero] = One\n
+            }\n
+            ElseIf (((Local4 == 0x05) || (Local5 == 0x05)))\n
+            {\n
+                Local0 [Zero] = 0x05\n
+            }\n
+            ElseIf (((Local4 == 0x04) || (Local5 == 0x04)))\n
+            {\n
+                Local0 [Zero] = 0x04\n
+            }\n
+
+            Local0 [One] = (CVWA (DerefOf (Local0 [One]), B0DV, B0CO) + CVWA (DerefOf (Local1 [One]), B1DV, B1CO))\n
+            Local0 [0x02] = (CVWA (DerefOf (Local0 [0x02]), B0DV, B0CO) + CVWA (DerefOf (Local1 [0x02]), B1DV, B1CO))\n
+            Local0 [0x03] = ((DerefOf (Local0 [0x03]) + DerefOf (Local1 [0x03])) / 0x02)\n
+        }\n
+
+        Return (Local0)\n
+    }\n
+
+    Method (_BIF, 0, NotSerialized)  // _BIF: Battery Information\n
+    {\n
+        Local0 = ^^BAT0._BIF ()\n
+        Local2 = ^^BAT0._STA ()\n
+        If ((0x1F == Local2))\n
+        {\n
+            Local4 = DerefOf (Local0 [One])\n
+            If ((!Local4 || (Ones == Local4)))\n
+            {\n
+                Local2 = Zero\n
+            }\n
+
+            Local4 = DerefOf (Local0 [0x02])\n
+            If ((!Local4 || (Ones == Local4)))\n
+            {\n
+                Local2 = Zero\n
+            }\n
+
+            Local4 = DerefOf (Local0 [0x04])\n
+            If ((!Local4 || (Ones == Local4)))\n
+            {\n
+                Local2 = Zero\n
+            }\n
+        }\n
+
+        Local1 = ^^BAT1._BIF ()\n
+        Local3 = ^^BAT1._STA ()\n
+        If ((0x1F == Local3))\n
+        {\n
+            Local4 = DerefOf (Local1 [One])\n
+            If ((!Local4 || (Ones == Local4)))\n
+            {\n
+                Local3 = Zero\n
+            }\n
+
+            Local4 = DerefOf (Local1 [0x02])\n
+            If ((!Local4 || (Ones == Local4)))\n
+            {\n
+                Local3 = Zero\n
+            }\n
+
+            Local4 = DerefOf (Local1 [0x04])\n
+            If ((!Local4 || (Ones == Local4)))\n
+            {\n
+                Local3 = Zero\n
+            }\n
+        }\n
+
+        If (((0x1F != Local2) && (0x1F == Local3)))\n
+        {\n
+            Local0 = Local1\n
+            Local2 = Local3\n
+            Local3 = Zero\n
+        }\n
+
+        If (((0x1F == Local2) && (0x1F == Local3)))\n
+        {\n
+            B0CO = !DerefOf (Local0 [Zero])\n
+            B1CO = !DerefOf (Local1 [Zero])\n
+            Local0 [Zero] = One\n
+            B0DV = DerefOf (Local0 [0x04])\n
+            B1DV = DerefOf (Local1 [0x04])\n
+            Local0 [One] = (CVWA (DerefOf (Local0 [One]), B0DV, B0CO) + CVWA (DerefOf (Local1 [One]), B1DV, B1CO))\n
+            Local0 [0x02] = (CVWA (DerefOf (Local0 [0x02]), B0DV, B0CO) + CVWA (DerefOf (Local1 [0x02]), B1DV, B1CO))\n
+            Local0 [0x04] = ((B0DV + B1DV) / 0x02)\n
+            Local0 [0x05] = (CVWA (DerefOf (Local0 [0x05]), B0DV, B0CO) + CVWA (DerefOf (Local1 [0x05]), B1DV, B1CO))\n
+            Local0 [0x06] = (CVWA (DerefOf (Local0 [0x06]), B0DV, B0CO) + CVWA (DerefOf (Local1 [0x06]), B1DV, B1CO))\n
+        }\n
+
+        Return (Local0)\n
+    }\n
+}\n
+end;
+#
+# DONE
+#
+#
+#       | Syntax Fix (Various code repair)
+#
+#
+into_all all code_regex Name\s+\(_HID,\s+\"\*(.*)\"\) replaceall_matched begin Name (_HID, "%1") end;
+#
+# DONE
+#
+#
+#       | IRC Fix (Battery Reporting)
+#
+#
+into device label IGPU parent_label PEG0 code_regex Name\s+\(_IRC,\s+([^\)].*)\) replace_matched
+begin
+Method(_IRC, 0, NotSerialized) { Return(%1) }
+end;
+#
+# DONE
+#
+#
+#      | Rename _DSM Methods to XDSM (Prevents conflicts with PCIe Info Injections)
+#
+#
+into_all method label _DSM set_label begin XDSM end;
+into_all method code_regex _DSM replaceall_matched begin XDSM end;
+#
+#
+# DONE
+#
+#
+#      | Series 9 Fixes
+#
+#
+into_all all code_regex _T_([0-6]) replaceall_matched begin T_%1 end;
+into device label PIC set_label begin IPIC end;
+#
+# DONE
+#
+#
+#      | Insert BLTH, MCHC, DTGP, LAN0, FPRN (Add Various Missing Devices) 
+#
+#
+into device label BLTH parent_label HSP6 remove_entry;
+into device label HSP6 insert begin
+Device (BLTH)\n
+{\n
+	Name (_ADR, Zero)\n
+}\n
+end;
+#
+into device label FPRD parent_label HSP5 remove_entry;
+into device label HSP5 insert begin
+Device (FPRD)\n
+{\n
+	Name (_ADR, Zero)\n
+}\n
+end;
+#
+into device label MCHC parent_label PCI0 remove_entry;
+into device label PCI0 insert begin
+Device (MCHC)\n
+{\n
+	Name (_ADR, Zero)\n
+}\n
+end;
+#
+into device name_adr Zero parent_adr 0x001C0002 remove_entry;
+into device name_adr 0x001C0002 insert
+begin
+Device (LAN0)\n
+{\n
+    Name (_ADR, Zero)\n
+    Method (_DSM, 4, NotSerialized)\n
+    {\n
+        Store (Package (0x04)\n
+        {\n
+            "built-in",\n
+            Buffer (One)\n
+            {\n
+                0x01\n
+            },\n
+            "location", \n
+            Buffer (0x02)\n
+            {\n
+                "1"\n
+            }\n
+        }, Local0)\n
+        DTGP (Arg0, Arg1, Arg2, Arg3, RefOf (Local0))\n
+        Return (Local0)\n
+    }\n
+}\n
+end;
+#
+#
+# DONE
+#
+#
+#      Insert DTGP (Specific to Apple authentic hardware, helps legitimize code present in DSDT)
+#
+#
+into method label DTGP remove_entry;
+into definitionblock code_regex . insert
+begin
+Method (DTGP, 5, NotSerialized)\n
+{\n
+    If (LEqual (Arg0, Buffer (0x10)\n
+            {\n
+                /* 0000 */    0xC6, 0xB7, 0xB5, 0xA0, 0x18, 0x13, 0x1C, 0x44, \n
+                /* 0008 */    0xB0, 0xC9, 0xFE, 0x69, 0x5E, 0xAF, 0x94, 0x9B\n
+            }))\n
+    {\n
+        If (LEqual (Arg1, One))\n
+        {\n
+            If (LEqual (Arg2, Zero))\n
+            {\n
+                Store (Buffer (One)\n
+                    {\n
+                        0x03\n
+                    }, Arg4)\n
+                Return (One)\n
+            }\n
+            If (LEqual (Arg2, One))\n
+            {\n
+                Return (One)\n
+            }\n
+        }\n
+    }\n
+    Store (Buffer (One)\n
+        {\n
+            0x00\n
+        }, Arg4)\n
+    Return (Zero)\n
+}
+end;
+#
+# DONE
+#
+#
+#        | Insert DSM Methods (Fill out information in the System Info app for PCI Devices)
+#
+#
+into method label _DSM parent_label IGPU remove_entry;
+into device label IGPU insert
+begin
+Method (_DSM, 4, NotSerialized)\n
+{\n
+    If (LEqual (Arg2, Zero)) { Return (Buffer() { 0x03 } ) }\n
+    Return (Package()\n
+    {\n
+        "AAPL,slot-name", Buffer() { "Built in" },\n
+        "device-id", Buffer() { 0x16, 0x16, 0x00, 0x00 },\n
+        "vendor-id", Buffer() { 0x86, 0x80, 0x00, 0x00 },\n
+        "model", Buffer() { "Apple HD Graphics, (Intel HD 5500)" },\n
+        "name", Buffer() { "Apple High Definition Graphics Controller" },\n
+        "device_type", Buffer() { "Graphics Controller" },\n
+        "built-in", Buffer() { 0x00 },\n
+    })\n
+}\n
+end;
+
+into method label _DSM parent_label GIGE remove_entry;
+into device label GIGE insert
+begin
+Method (_DSM, 4, NotSerialized)\n
+{\n
+    If (LEqual (Arg2, Zero)) { Return (Buffer() { 0x03 } ) }\n
+    Return (Package()\n
+    {\n
+        "AAPL,slot-name", Buffer() { "Built in" },\n
+        "device-id", Buffer() { 0xA2, 0x15, 0x00, 0x00 },\n
+        "vendor-id", Buffer() { 0x86, 0x80, 0x00, 0x00 },\n
+        "model", Buffer() { "Apple Computers, Gigabit Ethernet Controller, (Intel Broadwell I218-LM Gigabit Ethernet Controller)" },\n
+        "name", Buffer() { "Apple Computers, Gigabit Ethernet Controller" },\n
+        "device_type", Buffer() { "Ethernet Controller" },\n
+        "built-in", Buffer() { 0x00 },\n
+    })\n
+}\n
+end;
+
+into method label _DSM parent_label IGFX remove_entry;
+into device label IGFX insert
+begin
+Method (_DSM, 4, NotSerialized)\n
+{\n
+    If (LEqual (Arg2, Zero)) { Return (Buffer() { 0x03 } ) }\n
+    Return (Package()\n
+    {\n
+        "AAPL,slot-name", Buffer() { "Built in" },\n
+        "device-id", Buffer() { 0x0C, 0x16, 0x00, 0x00 },\n
+        "vendor-id", Buffer() { 0x86, 0x80, 0x00, 0x00 },\n
+        "model", Buffer() { "Apple Computers, HDMI Controller, (Intel Broadwell-U HD Audio Controller)" },\n
+        "name", Buffer() { "Apple Computers, HDMI Controller" },\n
+        "device_type", Buffer() { "HDMI Controller" },\n
+        "built-in", Buffer() { 0x00 },\n
+    })\n
+}\n
+end;
+
+into method label _DSM parent_label HDAU remove_entry;
+into device label HDAU insert
+begin
+Method (_DSM, 4, NotSerialized)\n
+{\n
+    If (LEqual (Arg2, Zero)) { Return (Buffer() { 0x03 } ) }\n
+    Return (Package()\n
+    {\n
+        "AAPL,slot-name", Buffer() { "Built in" },\n
+        "device-id", Buffer() { 0xA0, 0x16, 0x00, 0x00 },\n
+        "vendor-id", Buffer() { 0x86, 0x80, 0x00, 0x00 },\n
+        "model", Buffer() { "Apple Computers, ALC High Definition Audio Controller, (Intel Broadwell HD Audio, Realtek ALC292)" },\n
+        "name", Buffer() { "Apple Computers, HD Audio Controller" },\n
+        "device_type", Buffer() { "Audio Controller" },\n
+        "built-in", Buffer() { 0x00 },\n
+    })\n
+}\n
+end;
+
+into method label _DSM parent_label PXSX remove_entry;
+into device label PXSX parent_label RP02 insert
+begin
+Method (_DSM, 4, NotSerialized)\n
+{\n
+    Store (Package () {\n
+        "AAPL,slot-name", Buffer() { "Built In" },\n
+        "vendor-id", Buffer() { 0xE4, 0x14, 0x00, 0x00 },\n
+        "device-id", Buffer() { 0xA3, 0x43, 0x00, 0x00 },\n
+        "subsystem-id", Buffer() { 0x01, 0x31, 0x00, 0x00 },\n
+        "subsystem-vendor-id", Buffer() { 0x6b, 0x10, 0x00, 0x00 },\n
+        "vendor-id", Buffer() { 0xE4, 0x14, 0x00, 0x00 },\n
+        "name", Buffer() { "pci14e4,43a3" },\n
+        "model", Buffer() { "Apple Wifi Card" },\n
+        "device_type", Buffer() { "AirPort" },\n
+        "IOName", Buffer() { "pci14e4,43a3" },\n
+        "built-in", Buffer() { 0x00 },\n
+    }, Local0)\n
+    DTGP (Arg0, Arg1, Arg2, Arg3, RefOf (Local0))\n
+    Return (Local0)\n
+}\n
+end;
+
+into method label _DSM parent_label ARPT remove_entry;
+into device label ARPT parent_label RP02 insert
+begin
+Method (_DSM, 4, NotSerialized)\n
+{\n
+    Store (Package () {\n
+        "AAPL,slot-name", Buffer() { "Built In" },\n
+        "vendor-id", Buffer() { 0xE4, 0x14, 0x00, 0x00 },\n
+        "device-id", Buffer() { 0xA3, 0x43, 0x00, 0x00 },\n
+        "subsystem-id", Buffer() { 0x01, 0x31, 0x00, 0x00 },\n
+        "subsystem-vendor-id", Buffer() { 0x6b, 0x10, 0x00, 0x00 },\n
+        "vendor-id", Buffer() { 0xE4, 0x14, 0x00, 0x00 },\n
+        "name", Buffer() { "pci14e4,43a3" },\n
+        "model", Buffer() { "Apple Wifi Card" },\n
+        "device_type", Buffer() { "AirPort" },\n
+        "IOName", Buffer() { "pci14e4,43a3" },\n
+        "built-in", Buffer() { 0x00 },\n
+    }, Local0)\n
+    DTGP (Arg0, Arg1, Arg2, Arg3, RefOf (Local0))\n
+    Return (Local0)\n
+}\n
+end;
+
+into method label _DSM parent_label SMBU remove_entry;
+into device label SMBU insert begin
+Method (_DSM, 4, NotSerialized)\n
+{\n
+    If (LEqual (Arg2, Zero)) { Return (Buffer() { 0x03 } ) }\n
+    Return (Package()\n
+    {\n
+        "AAPL,slot-name", Buffer() { "Built In" },\n
+        "name", Buffer() { "Apple Computers SMBUS Controller" },\n
+	"model", Buffer() { "Apple Computers, SMBUS Controller, (Intel Broadwell Wildcat Point-LP SMBUS Controller)" },\n
+	"device_type", Buffer() { "SMBUS Controller" },\n
+	"device-id", Buffer() { 0xA2,0x9C,0x86,0x80 },\n
+        "built-in", Buffer() { 0x00 },\n
+    })\n
+}\n
+end;
+
+into method label _DSM parent_label SBUS remove_entry;
+into device label SBUS insert begin
+Method (_DSM, 4, NotSerialized)\n
+{\n
+    If (LEqual (Arg2, Zero)) { Return (Buffer() { 0x03 } ) }\n
+    Return (Package()\n
+    {\n
+        "AAPL,slot-name", Buffer() { "Built In" },\n
+        "name", Buffer() { "Apple Computers SMBUS Controller" },\n
+	"model", Buffer() { "Apple Computers, SMBUS Controller, (Intel Broadwell Wildcat Point-LP SMBUS Controller)" },\n
+	"device_type", Buffer() { "SMBUS Controller" },\n
+	"device-id", Buffer() { 0xA2,0x9C,0x86,0x80 },\n
+        "built-in", Buffer() { 0x00 },\n
+    })\n
+}\n
+end;
+
+into method label _DSM parent_label XHCI remove_entry;
+into device label XHCI insert begin
+Method (_DSM, 4, NotSerialized)\n
+{\n
+    If (LEqual (Arg2, Zero)) { Return (Buffer() { 0x03 } ) }\n
+    Return (Package()\n
+    {\n
+        "AAPL,slot-name", Buffer() { "Built In" },\n
+        "name", Buffer() { "Apple Computers xHCI Controller" },\n
+	"model", Buffer() { "Apple Computers, xHCI Controller, (Intel Broadwell Wildcat Point-LP xHCI Controller)" },\n
+	"device_type", Buffer() { "xHCI Controller" },\n
+	"device-id", Buffer() { 0xB1,0x9C,0x86,0x80 },\n
+        "built-in", Buffer() { 0x00 },\n
+    })\n
+}\n
+end;
+
+into method label _DSM parent_label EH01 remove_entry;
+into device label EH01 insert begin
+Method (_DSM, 4, NotSerialized)\n
+{\n
+    If (LEqual (Arg2, Zero)) { Return (Buffer() { 0x03 } ) }\n
+    Return (Package()\n
+    {\n
+        "AAPL,slot-name", Buffer() { "Built In" },\n
+        "name", Buffer() { "Apple Computers EHCI Controller" },\n
+	"model", Buffer() { "Apple Computers, EHCI Controller, (Intel Broadwell Wildcat Point-LP EHCI Controller)" },\n
+	"device_type", Buffer() { "EHCI Controller" },\n
+	"device-id", Buffer() { 0xA6,0x9C,0x86,0x80 },\n
+        "built-in", Buffer() { 0x00 },\n
+    })\n
+}\n
+end;
+
+into method label _DSM parent_label IMEI remove_entry;
+into device label IMEI insert begin
+Method (_DSM, 4, NotSerialized)\n
+{\n
+    If (LEqual (Arg2, Zero)) { Return (Buffer() { 0x03 } ) }\n
+    Return (Package()\n
+    {\n
+        "AAPL,slot-name", Buffer() { "Built In" },\n
+        "name", Buffer() { "Apple Computers IMEI Controller" },\n
+	"model", Buffer() { "Apple Computers, IMEI Controller, (Intel Broadwell Wildcat Point-LP IMEI Controller)" },\n
+	"device_type", Buffer() { "IMEI Controller" },\n
+	"device-id", Buffer() { 0xBA,0x9C,0x86,0x80 },\n
+        "built-in", Buffer() { 0x00 },\n
+    })\n
+}\n
+end;
+
+into method label _DSM parent_label MCHC remove_entry;
+into device label MCHC insert begin
+Method (_DSM, 4, NotSerialized)\n
+{\n
+    If (LEqual (Arg2, Zero)) { Return (Buffer() { 0x03 } ) }\n
+    Return (Package()\n
+    {\n
+        "AAPL,slot-name", Buffer() { "Built In" },\n
+        "name", Buffer() { "Apple Computers Thermal Controller" },\n
+	"model", Buffer() { "Apple Computers, Thermal Controller, (Intel Broadwell Wildcat Point-LP MCHC Controller)" },\n
+	"device_type", Buffer() { "Thermal Controller" },\n
+	"device-id", Buffer() { 0xA4,0x9C,0x86,0x80 },\n
+        "built-in", Buffer() { 0x00 },\n
+    })\n
+}\n
+end;
+
+into method label _DSM parent_label LPCB remove_entry;
+into device label LPCB insert begin
+Method (_DSM, 4, NotSerialized)\n
+{\n
+    If (LEqual (Arg2, Zero)) { Return (Buffer() { 0x03 } ) }\n
+    Return (Package()\n
+    {\n
+        "AAPL,slot-name", Buffer() { "Built In" },\n
+        "name", Buffer() { "Apple Computers LPC Bus Controller" },\n
+	"model", Buffer() { "Apple Computers, LPC Bus Controller, (Intel Broadwell Wildcat Point-LP LPC Controller)" },\n
+	"device_type", Buffer() { "LPC Controller" },\n
+	"device-id", Buffer() { 0xC3,0x9C,0x86,0x80 },\n
+        "built-in", Buffer() { 0x00 },\n
+    })\n
+}\n
+end;
+
+into method label _DSM parent_label SATA remove_entry;
+into device label SATA insert begin
+Method (_DSM, 4, NotSerialized)\n
+{\n
+    If (LEqual (Arg2, Zero)) { Return (Buffer() { 0x03 } ) }\n
+    Return (Package()\n
+    {\n
+        "AAPL,slot-name", Buffer() { "Built In" },\n
+        "name", Buffer() { "Apple Computers AHCI Controller" },\n
+	"model", Buffer() { "Apple Computers, SATA Controller, (Intel Broadwell Wildcat Point-LP AHCI Controller)" },\n
+	"device_type", Buffer() { "AHCI Controller" },\n
+	"device-id", Buffer() { 0x83,0x9C,0x86,0x80 },\n
+        "built-in", Buffer() { 0x00 },\n
+    })\n
+}\n
+end;
+
+into method label _DSM parent_label SATB remove_entry;
+into device label SATB insert begin
+Method (_DSM, 4, NotSerialized)\n
+{\n
+    If (LEqual (Arg2, Zero)) { Return (Buffer() { 0x03 } ) }\n
+    Return (Package()\n
+    {\n
+	"AAPL,slot-name", "Built In",\n
+	"name", Buffer() { "Apple Macbook Pro M.2 Solid State Drive" },\n
+	"model", Buffer() { "Apple Macbook Pro M.2 Solid State Drive, (Intel Broadwell Wildcat Point-LP M.2 Controller)" },\n
+	"device_type", Buffer() { "M.2 Controller" },\n
+        "built-in", Buffer() { 0x00 },\n
+    })\n
+}\n
+end;
+
+into method label XDSM parent_label HDEF remove_entry;
+into device label HDEF insert
+begin
+Method (ZDSM, 4, NotSerialized)\n
+{\n
+    If (LEqual (Arg2, Zero)) { Return (Buffer() { 0x03 } ) }\n
+    Return (Package()\n
+    {\n
+        "AAPL,slot-name", Buffer() { "Built in" },\n
+        "device-id", Buffer() { 0x92, 0x02, 0xEC, 0x10 },\n
+        "layout-id", Buffer() { 7, 0x00, 0x00, 0x00 },\n
+        "codec-id", Buffer() { 0x92, 0x02, 0xEC, 0x10 },\n
+        "model", Buffer() { "Apple Macbook Pro ALC High Definition Audio Controller, (Realtek ALC292)" },\n
+        "name", Buffer() { "Apple Macbook Pro ALC High Definition Audio, (Realtek ALC292)" },\n
+        "device_type", Buffer() { "Audio Controller" },\n
+        "built-in", Buffer() { 0x00 },\n
+        "PinConfigurations", Buffer() { },\n
+        "hda-gfx", Buffer() { "onboard-1" },\n
+        //"MaximumBootBeepVolume", 77,\n
+    })\n
+}\n
+end;
+
+#battery_Lenovo-T450.txt
+# created by shmilee
+# refer to T440p, X220, Guide 'How to patch DSDT for working battery status'
+# Note: requires "Fix Mutex with non-zero SyncLevel"
+
+# OperationRegion (ECOR, EmbeddedControl, 0x00, 0x0100)
+# 1. declaration accessed:
+# HWAC,   16, SBRC,   16, SBFC,   16, SBAC,   16, SBVO,   16, SBBM,   16,
+# SBDC,   16, SBDV,   16, SBSN,   16
+# SBCH,   32
+# SBMN,  128
+# SBDN,  128
+# 2. declaration not accessed:
+# HWAK,   16, HSPD,   16, HDEN,   32, HDEP,   32,
+# SBAE,   16, SBRS,   16, SBAF,   16, SBBS,   16
+# SBMD,   16, SBCC,   16
+# SBOM,   16, SBSI,   16, SBDT,   16,
+
+# Note: disable secondary battery
+#  *** uncomment this line if you have only one battery installed)
+#into method label _STA parent_label BAT1 replace_content begin Return(0) end;
+
+# 1.1 deal with 16-bit
+into method label B1B2 remove_entry;
+into definitionblock code_regex . insert
+begin
+Method (B1B2, 2, NotSerialized)\n
+{\n
+    Return (Or(Arg0, ShiftLeft(Arg1, 8)))
+}\n
+end;
+
+# declarations from 16-bit to 8-bit
+into device label EC code_regex HWAC,\s+16, replace_matched begin WAC0,8,WAC1,8, end;
+into device label EC code_regex SBRC,\s+16, replace_matched begin BRC0,8,BRC1,8, end;
+into device label EC code_regex SBFC,\s+16, replace_matched begin BFC0,8,BFC1,8, end;
+into device label EC code_regex SBAC,\s+16, replace_matched begin BAC0,8,BAC1,8, end;
+into device label EC code_regex SBVO,\s+16, replace_matched begin BVO0,8,BVO1,8, end;
+into device label EC code_regex SBBM,\s+16, replace_matched begin BBM0,8,BBM1,8, end;
+into device label EC code_regex SBDC,\s+16, replace_matched begin BDC0,8,BDC1,8, end;
+into device label EC code_regex SBDV,\s+16, replace_matched begin BDV0,8,BDV1,8, end;
+into device label EC code_regex SBSN,\s+16 replace_matched begin BSN0,8,BSN1,8, end;
+
+# access to those registers from 16-bit to 8-bit
+into_all all code_regex \\_SB\.PCI0\.LPC\.EC\.HWAC replaceall_matched begin B1B2(\\_SB.PCI0.LPC.EC.WAC0,\\_SB.PCI0.LPC.EC.WAC1) end;
+into_all all code_regex \\_SB\.PCI0\.LPCB\.EC\.HWAC replaceall_matched begin B1B2(\\_SB.PCI0.LPCB.EC.WAC0,\\_SB.PCI0.LPCB.EC.WAC1) end;
+into_all method label GBST code_regex \(SBRC, replaceall_matched begin (B1B2 (BRC0, BRC1), end;
+into_all method label GBIF code_regex \(SBFC, replaceall_matched begin (B1B2 (BFC0, BFC1), end;
+into_all method label GBST code_regex \(SBAC, replaceall_matched begin (B1B2 (BAC0, BAC1), end;
+into_all method label GBST code_regex \(SBVO, replaceall_matched begin (B1B2 (BVO0, BVO1), end;
+into_all method label GBIF code_regex \(SBBM, replaceall_matched begin (B1B2 (BBM0, BBM1), end;
+into_all method label GBIF code_regex \(SBDC, replaceall_matched begin (B1B2 (BDC0, BDC1), end;
+into_all method label GBIF code_regex \(SBSN, replaceall_matched begin (B1B2 (BSN0, BSN1), end;
+
+into_all method label GBIF code_regex SBDV replaceall_matched begin B1B2 (BDV0, BDV1) end;
+
+# 1.2 deal with 32-bit
+into method label B1B4 remove_entry;
+into definitionblock code_regex . insert
+begin
+Method (B1B4, 4, NotSerialized)\n
+{\n
+    Store (Arg3, Local0)\n
+    Or (Arg2, ShiftLeft(Local0, 8), Local0)\n
+    Or (Arg1, ShiftLeft(Local0, 8), Local0)\n
+    Or (Arg0, ShiftLeft(Local0, 8), Local0)\n
+    Return (Local0)\n
+}\n
+end;
+
+into device label EC code_regex SBCH,\s+32 replace_matched begin BCH0,8,BCH1,8,BCH2,8,BCH3,8 end;
+into_all method label GBIF code_regex \(SBCH, replaceall_matched begin (B1B4(BCH0,BCH1,BCH2,BCH3), end;
+
+# 1.3 deal with 128-bit
+# utility methods to read/write buffers from/to EC
+into method label RE1B parent_label EC remove_entry;
+into method label RECB parent_label EC remove_entry;
+into device label EC insert
+begin
+Method (RE1B, 1, NotSerialized)\n
+{\n
+    OperationRegion(ERAM, EmbeddedControl, Arg0, 1)\n
+    Field(ERAM, ByteAcc, NoLock, Preserve) { BYTE, 8 }\n
+    Return(BYTE)\n
+}\n
+Method (RECB, 2, Serialized)\n
+{\n
+    ShiftRight(Arg1, 3, Arg1)\n
+    Name(TEMP, Buffer(Arg1) { })\n
+    Add(Arg0, Arg1, Arg1)\n
+    Store(0, Local0)\n
+    While (LLess(Arg0, Arg1))\n
+    {\n
+        Store(RE1B(Arg0), Index(TEMP, Local0))\n
+        Increment(Arg0)\n
+        Increment(Local0)\n
+    }\n
+    Return(TEMP)\n
+}\n
+end;
+
+into device label EC code_regex (SBMN,)\s+(128) replace_matched begin BMNX,%2,//%1%2 end;
+into device label EC code_regex (SBDN,)\s+(128) replace_matched begin BDNX,%2,//%1%2 end;
+
+into method label GBIF code_regex \(SBMN, replaceall_matched begin (RECB(0xA0,128), end;
+into method label GBIF code_regex \(SBDN, replaceall_matched begin (RECB(0xA0,128), end;
+

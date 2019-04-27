@@ -1,0 +1,11 @@
+# This is from XDleader555 ( http://www.tonymacx86.com/el-capitan-laptop-guides/175935-guide-lenovo-t430-el-capitan-10.html#post1143932 )
+#
+into method label \_WAK code_regex (Return\s+\(.*) replace_matched
+begin
+If (LEqual(Arg0,3))\n
+{\n
+    \\_SI._SST(0x01)\n
+    \\_GPE._L0D()\n
+}\n
+%1\n
+end;

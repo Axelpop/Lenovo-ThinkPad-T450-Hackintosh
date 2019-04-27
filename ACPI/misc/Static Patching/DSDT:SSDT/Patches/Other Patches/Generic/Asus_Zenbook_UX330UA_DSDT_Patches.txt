@@ -1,0 +1,1056 @@
+#DSDT Bereinigen Michael
+into definitionblock code_regex (External\s+\(BNUM,\s+.*\)) replace_matched begin //%1 end;
+
+
+#Patch 1 Grundpach
+# Maintained by: toleda for: github.com/toleda/audio_hdmi_9series
+# File: has0-9series-Clean_Compile.txt_v1.0
+# Credits: SJ_UnderWater, RehabMan, shrieken213
+#
+# Complier fixes for newly extracted AMI/9series/dsdts
+#
+into device label PCI0 code_regex (\s+Zero){2,} remove_matched;
+into method label ADBG code_regex Arg0 remove_matched;
+into_all method label _PS3 code_regex PS3X\n replace_matched begin Store (Zero, PS3X)\n end;
+into_all method label _PS2 code_regex PS2X\n replace_matched begin Store (Zero, PS2X)\n end;
+into_all method label _PS0 code_regex PS0X\n replace_matched begin Store (Zero, PS0X)\n end;
+into_all method label _INI code_regex INIR\n replace_matched begin Store (Zero, INIR)\n end;
+#
+# Complier warnings and remarks fixes
+#
+into method label SPL1 insert begin Return (Zero) end;
+into method label RDCA insert begin Return (Zero) end;
+into method label CNRS insert begin Return (Zero) end;
+into_all method label GPEH insert begin Return (Zero) end;
+into method label _PS0 parent_label XHC insert begin Return (Zero) end;
+into method label _PS3 parent_label XHC insert begin Return (Zero) end;
+into method label _PS0 parent_label NVM0 insert begin Return (Zero) end;
+into method label _PS3 parent_label NVM0 insert begin Return (Zero) end;
+into method label _PS0 parent_label RHUB insert begin Return (Zero) end;
+into method label _DSM parent_label SHUB insert begin Return (Zero) end;
+into method label _DSM parent_label DFUD insert begin Return (Zero) end;
+into method label _DSM parent_label TPD4 insert begin Return (Zero) end;
+into method label _DSM parent_label TPL0 insert begin Return (Zero) end;
+into method label _DSM parent_label TPL1 insert begin Return (Zero) end;
+into method label _DSM parent_label TPL2 insert begin Return (Zero) end;
+into method label _DSM parent_label TPL3 insert begin Return (Zero) end;
+into method label _DSM parent_label TPD0 insert begin Return (Zero) end;
+into method label _DSM parent_label TPD1 insert begin Return (Zero) end;
+into method label _DSM parent_label TPD2 insert begin Return (Zero) end;
+into method label _DSM parent_label TPD3 insert begin Return (Zero) end;
+into method label _DSM parent_label TPD7 insert begin Return (Zero) end;
+into method label _DSM parent_label TPD8 insert begin Return (Zero) end;
+into method label _DSM parent_label TPD9 insert begin Return (Zero) end;
+into method label _HID parent_label _SB.TPM insert begin Return (Zero) end;
+into_all method label _DEP set_label begin DEP end;
+into_all method label _HRV set_label begin HRV end;
+
+into method label ADBG replace_content begin
+If (CondRefOf (MDBG))\n
+{\n
+    Return (MDBG)\n
+}\n
+Return (Zero)\n
+end;
+into_all all code_regex (Acquire\s\(MUT0,\s0x)....\) replace_matched begin Acquire (MUT0, 0xFFFF) end;
+
+
+into device label SIO1 code_regex 0x00(,\s+//\s+L) replaceall_matched begin 0x01%1 end;
+# Change _T_0 to T_0 
+into_all all code_regex _T_0 replaceall_matched begin T_0 end;
+into_all all code_regex _T_1 replaceall_matched begin T_1 end;
+into_all all code_regex _T_2 replaceall_matched begin T_2 end;
+#
+# Debug
+into definitionblock code_regex . insert
+begin Store ("hsr0-9series-Clean_Compile_v1.0 dsdt edits, github.com/toleda", Debug) end;
+
+
+
+#Patch 2 “Rename _DSM Methods to XDSM”
+#Maintained by: RehabMan for: Laptop Patches
+#rename_DSM.txt
+
+# To remove all _DSM methods by renaming to XDSM.
+#
+# Since "Remove _DSM methods" exposes a MaciASL bug with certain files,
+#  this one can be used instead.
+
+into_all method label _DSM set_label begin XDSM end;
+into_all method code_regex _DSM replaceall_matched begin XDSM end;
+
+
+#Patch 3 "Fix _WAK Arg0 v2"
+#Maintained by: RehabMan for: Laptop Patches
+#system_WAK2.txt
+
+#
+# In 10.8.5 and perhaps later versions of OS X, DSDT method _WAK
+# called after resuming from S3 suspend (Sleep, or suspend to RAM),
+# is called with garbage in Arg0, where it should be a value 
+# representing the sleep state being left (1-5).
+#
+# This causes problems for code in DSDT _WAK method which expects
+# and checks against Arg0==3 for wake from sleep to turn on various
+# devices or restore internal state to a working state.
+#
+# This patch adds code at the very beginning of the method to
+# force an an out-of-range Arg0 to 3.
+#
+# See system_WAK1.txt for an alternate patch
+#
+# Note regarding Yosemite:
+#  At least in Yosemite 10.10.2, this bug appears to be fixed.
+#  I didn't notice/verify on other versions of Yosemite
+#
+
+into method label _WAK code_regex ([\s\S]*) replace_matched
+begin
+If (LOr(LLess(Arg0,1),LGreater(Arg0,5))) { Store(3,Arg0) }\n
+%1
+end;
+
+into method label \_WAK code_regex ([\s\S]*) replace_matched
+begin
+If (LOr(LLess(Arg0,1),LGreater(Arg0,5))) { Store(3,Arg0) }\n
+%1
+end;
+
+
+#Patch 4 "HPET Fix"
+#Maintained by: RehabMan for: Laptop Patches
+#system_HPET.txt
+
+# If you have panic "No HPETs available..." or have a abrubt restart
+# after waking from sleep, you may need this patch.
+# The patch makes sure the HPET device is always available.
+
+# HPET fix to avoid AppleIntelCPUPowerManagement panic
+into method label _STA parent_hid PNP0103 remove_entry;
+into device name_hid PNP0103 code_regex Name\s\(_STA\,\s+0x0F\) remove_matched;
+into device name_hid PNP0103 insert
+begin
+Name (_STA, 0x0F)\n
+end;
+
+into method label _CRS parent_hid PNP0103 remove_entry;
+into device name_hid PNP0103 insert
+begin
+Method (_CRS, 0, NotSerialized)\n
+{\n
+    Return (BUF0)\n
+}\n
+end;
+
+
+#Patch 5 "SMBUS Fix"
+#Maintained by: RehabMan for: Laptop Patches
+#system_SMBUS.txt
+
+#   SMBUS fix
+into device label BUS0 parent_adr 0x001F0003 remove_entry;
+into device name_adr 0x001F0003 insert
+begin
+Device (BUS0)\n
+{\n
+    Name (_CID, "smbus")\n
+    Name (_ADR, Zero)\n
+    Device (DVL0)\n
+    {\n
+        Name (_ADR, 0x57)\n
+        Name (_CID, "diagsvault")\n
+        Method (_DSM, 4, NotSerialized)\n
+        {\n
+            If (LEqual (Arg2, Zero)) { Return (Buffer() { 0x03 } ) }\n
+            Return (Package() { "address", 0x57 })\n
+        }\n
+    }\n
+}\n
+end;
+
+
+#Patch 6 "IRQ Fix"
+#Maintained by: RehabMan for: Laptop Patches
+#system_IRQ.txt
+
+# This can fix non-working audio and also has an affect on HPET.
+#
+# Use this if you have issues with patched AppleHDA (required on almost all laptops)
+# or if you have issues with HPET (restart after wake).
+
+# IRQ fix
+into device name_hid PNP0000 code_regex IRQNoFlags\s\(\)\n\s+\{(\d+)\} remove_matched;
+into device name_hid PNP0100 code_regex IRQNoFlags\s\(\)\n\s+\{(\d+)\} remove_matched;
+into device name_hid PNP0B00 code_regex IRQNoFlags\s\(\)\n\s+\{(\d+)\} remove_matched;
+into device name_hid PNP0103 code_regex IRQNoFlags\s\(\)\n\s+\{.*\} removeall_matched;
+into device name_hid PNP0103 code_regex Name\s\(([^,]+),\sResourceTemplate\s\(\).*\n\s+\{((?:.|\n)*)\}\) replace_matched
+begin
+Name (%1, ResourceTemplate()\n
+{\n
+    IRQNoFlags() { 0, 8, 11, 15 }\n
+%2
+})\n
+end;
+
+
+#Patch 7 "RTC Fix"
+#Maintained by: RehabMan for: Laptop Patches
+#system_RTC.txt
+
+#   RTC fix
+into device name_hid PNP0B00 code_regex (IO\s\((?:\s*[^,]+,\s*(?:\/\/\s.*)?\s*\n)+\s*)(\dx\d+)(,\s*(?:\/\/\s.*)?\s*\n\s*\)) replace_matched begin %10x02%3 end;
+
+
+#Patch 8 VoodooI2C "Windows 10 DSDT Patch for VoodooI2C"
+# Windows 10 DSDT Patch for VoodooI2C
+# Allows I2C controllers and devices to be discovered by OS X.
+# Based off patches written by RehabMan
+
+into_all method code_regex If\s+\([\\]?_OSI\s+\(\"Windows\s2015\"\)\) replace_matched begin If(LOr(_OSI("Darwin"),_OSI("Windows 2015"))) end;
+
+
+#Patch 9 "Fix Mutex with non-zero SyncLevel"
+#Maintained by: RehabMan for: Laptop Patches
+#system_Mutex.txt
+
+#
+# Some DSDTs use Mutex objects with non-zero a SyncLevel.  Evidently,
+# OS X has some difficulty with this part of the ACPI spec, either that 
+# or the DSDTs are, in fact, codec incorrectly and Windows is ignoring 
+# it.
+
+# The common result of a non-zero SyncLevel is failure of methods at the
+# point of Acquire on the mutext in question.  This can result in strange
+# behavior, failed battery status, or other issues.
+#
+# This patch corrects all Mutex objects declared with a non-zero
+# SyncLevel to use zero.
+#
+
+# 2x as there is some sort of MaciASL bug...
+# (code_regex_not seems broken)
+#into_all all code_regex_not Mutex\s+\([^,]*,\s+0x00\) code_regex Mutex\s+\(([^,]*),\s+[^)]*\) replaceall_matched begin Mutex(%1, 0) end;
+#into_all all code_regex_not Mutex\s+\([^,]*,\s+0x00\) code_regex Mutex\s+\(([^,]*),\s+[^)]*\) replaceall_matched begin Mutex(%1, 0) end;
+
+# 10x as workaround for MaciASL bug...
+into_all all code_regex Mutex\s+\(([^,]*),\s+[^)]*\) replaceall_matched begin Mutex(%1, 0) end;
+into_all all code_regex Mutex\s+\(([^,]*),\s+[^)]*\) replaceall_matched begin Mutex(%1, 0) end;
+into_all all code_regex Mutex\s+\(([^,]*),\s+[^)]*\) replaceall_matched begin Mutex(%1, 0) end;
+into_all all code_regex Mutex\s+\(([^,]*),\s+[^)]*\) replaceall_matched begin Mutex(%1, 0) end;
+into_all all code_regex Mutex\s+\(([^,]*),\s+[^)]*\) replaceall_matched begin Mutex(%1, 0) end;
+into_all all code_regex Mutex\s+\(([^,]*),\s+[^)]*\) replaceall_matched begin Mutex(%1, 0) end;
+into_all all code_regex Mutex\s+\(([^,]*),\s+[^)]*\) replaceall_matched begin Mutex(%1, 0) end;
+into_all all code_regex Mutex\s+\(([^,]*),\s+[^)]*\) replaceall_matched begin Mutex(%1, 0) end;
+into_all all code_regex Mutex\s+\(([^,]*),\s+[^)]*\) replaceall_matched begin Mutex(%1, 0) end;
+into_all all code_regex Mutex\s+\(([^,]*),\s+[^)]*\) replaceall_matched begin Mutex(%1, 0) end;
+
+
+#Patch 10 "Fix PNOT/PPNT"
+#Maintained by: RehabMan for: Laptop Patches
+#system_PNOT.txt
+
+# PNOT or PPNT are commonly called from EC/AC adapter related code
+# and often access identifiers that are present in SSDTs generally
+# dropped (CPU SSDTs)
+#
+# Because of this, it is best to make these methods do nothing.
+
+# make PNOT/PPNT/PNTF a no-op
+into method label PNOT replace_content begin // nothing end;
+into method label PPNT replace_content begin // nothing end;
+into method label PNTF replace_content begin // nothing end;
+
+
+#Patch 11 "Add IMEI"
+#Maintained by: RehabMan for: Laptop Patches
+#system_IMEI.txt
+
+# if you already have an IMEI/HECI/MEI device, you should not use this patch
+# but if you do, these patches will remove the existing one
+into device name_adr 0x00160000 remove_entry;
+into device label IMEI parent_label PCI0 remove_entry;
+
+# add missing IMEI device
+into device label PCI0 insert
+begin
+Device (IMEI)\n
+{\n
+    Name (_ADR, 0x00160000)\n
+}\n
+end;
+
+
+#Patch 12 Battery
+#Maintained by: RehabMan for: Laptop Patches
+#battery_ASUS-N55SL.txt
+
+# created by RehabMan 8/12/2013
+# created originally for jesselid
+
+# works for:
+#  ASUS N55SL, BIOS rev. 204
+#  ASUS VivoBook series
+#  ASUS Zenbook UX31A
+#  ASUS UX301LA
+#  ASUS X553E-SX399V
+#  ASUS F501A
+#  ASUS K55VM
+#  ASUS U46SV, BIOS rev. 2.04
+#  ASUS N43
+#  ASUS PU500CA (90NB00F1-M01120)
+#  ASUS N73SV
+#  ASUS X401A-WX108
+#  ASUS F551CA Bios rev. 207
+#  ASUS S551LB VivoBook
+#  ASUS ZenBook UX32VD
+#  ASUS ZenBook UX32V
+#  ASUS F550L-X455H
+#  ASUS X53S
+#  ASUS K550JD-XX003H
+#  ASUS G53SX
+#  ASUS K56CB
+#  ASUS UX305
+#  ASUS N550LF (per gabberZ)
+#  ASUS TP300LA
+#  ASUS X200LA
+#  ASUS TP500LA (per haimann951)
+#  ASUS U46E (per jacopers)
+#  ASUS N550JK (per sonicmule)
+#  ASUS K46CM
+#  ASUS N76-VB-T4038H (per Tamshiii)
+#  ASUS Zenbook Pro UX501VW (per Jingu)
+#  ASUS G751JY (per Going Bald)
+#  ASUS S300CA (per mugen441)
+#  ASUS F556UA-AB32 (per Jdazzle44)
+#  ASUS UX306UA (per MaraficeEye)
+#  ASUS N550JV (per Xracer99)
+#  ASUS X540LJ (per palash)
+#  ASUS X550VX (per vualeks)
+#  ASUS UX330UA (per fluxo)
+#  ASUS UX303UB (per CyanTech)
+#  ASUS K550JK (per m3ftwz)
+#  ASUS TP500LB (per Archangeliques)
+#  ASUS X556UA (per ben9923)
+#  ASUS UX410 (per minhquang211090)
+#  ASUS N552VW (per nicolas2121)
+#  ASUS Vivobook NV752 (per tmazzoni)
+#  ASUS Strix FX502VM/GL502VM (per benspoonder)
+#  ASUS X53E (per REvandenBerg)
+#  ASUS UX430 (per starcentral)
+# ...
+#  and many others
+
+into method label B1B2 remove_entry;
+into definitionblock code_regex . insert
+begin
+Method (B1B2, 2, NotSerialized) { Return (Or (Arg0, ShiftLeft (Arg1, 8))) }\n
+end;
+
+# not really for battery, but might come in handy to read fan speed(s)
+into device label EC0 code_regex TAH0,\s+16 replace_matched begin TH00,8,TH01,8 end;
+into device label EC0 code_regex TAH1,\s+16 replace_matched begin TH10,8,TH11,8 end;
+into method label TACH code_regex \(TAH0, replace_matched begin (B1B2(TH00,TH01), end;
+into method label TACH code_regex \(TAH1, replace_matched begin (B1B2(TH10,TH11), end;
+into method label GFAN code_regex \(\\_SB\.PCI0\.LPCB\.EC0\.TAH0, replace_matched begin (B1B2(\\_SB.PCI0.LPCB.EC0.TH00,\\_SB.PCI0.LPCB.EC0.TH01), end;
+
+# battery EC
+into device label EC0 code_regex B0SN,\s+16 replace_matched begin B0S0,8,B0S1,8 end;
+into device label EC0 code_regex B1SN,\s+16 replace_matched begin B1S0,8,B1S1,8 end;
+into method label BIFA code_regex \(B0SN, replace_matched begin (B1B2(B0S0,B0S1), end;
+into method label BIFA code_regex \(B1SN, replace_matched begin (B1B2(B1S0,B1S1), end;
+into device label EC0 code_regex DT2B,\s+16 replace_matched begin T2B0,8,T2B1,8 end;
+into method label SMBR code_regex \(DT2B, replace_matched begin (B1B2(T2B0,T2B1), end;
+into method label SMBW code_regex Store\s+\(([^,]*),\s+DT2B\) replace_matched
+begin
+Store(%1,T2B0) Store(ShiftRight(%1,8),T2B1)
+end;
+
+into device label EC0 insert
+begin
+Method (RDBA, 0, Serialized)\n
+{\n
+    Name (TEMP, Buffer(0x20) { })\n
+    Store (BA00, Index(TEMP, 0x00))\n
+    Store (BA01, Index(TEMP, 0x01))\n
+    Store (BA02, Index(TEMP, 0x02))\n
+    Store (BA03, Index(TEMP, 0x03))\n
+    Store (BA04, Index(TEMP, 0x04))\n
+    Store (BA05, Index(TEMP, 0x05))\n
+    Store (BA06, Index(TEMP, 0x06))\n
+    Store (BA07, Index(TEMP, 0x07))\n
+    Store (BA08, Index(TEMP, 0x08))\n
+    Store (BA09, Index(TEMP, 0x09))\n
+    Store (BA0A, Index(TEMP, 0x0A))\n
+    Store (BA0B, Index(TEMP, 0x0B))\n
+    Store (BA0C, Index(TEMP, 0x0C))\n
+    Store (BA0D, Index(TEMP, 0x0D))\n
+    Store (BA0E, Index(TEMP, 0x0E))\n
+    Store (BA0F, Index(TEMP, 0x0F))\n
+    Store (BA10, Index(TEMP, 0x10))\n
+    Store (BA11, Index(TEMP, 0x11))\n
+    Store (BA12, Index(TEMP, 0x12))\n
+    Store (BA13, Index(TEMP, 0x13))\n
+    Store (BA14, Index(TEMP, 0x14))\n
+    Store (BA15, Index(TEMP, 0x15))\n
+    Store (BA16, Index(TEMP, 0x16))\n
+    Store (BA17, Index(TEMP, 0x17))\n
+    Store (BA18, Index(TEMP, 0x18))\n
+    Store (BA19, Index(TEMP, 0x19))\n
+    Store (BA1A, Index(TEMP, 0x1A))\n
+    Store (BA1B, Index(TEMP, 0x1B))\n
+    Store (BA1C, Index(TEMP, 0x1C))\n
+    Store (BA1D, Index(TEMP, 0x1D))\n
+    Store (BA1E, Index(TEMP, 0x1E))\n
+    Store (BA1F, Index(TEMP, 0x1F))\n
+    Return (TEMP)\n
+}\n
+end;
+
+into device label EC0 insert
+begin
+Method (WRBA, 1, Serialized)\n
+{\n
+    Name (TEMP, Buffer(0x20) { })\n
+    Store (Arg0, TEMP)\n
+    Store (DerefOf(Index(TEMP, 0x00)), BA00)\n
+    Store (DerefOf(Index(TEMP, 0x01)), BA01)\n
+    Store (DerefOf(Index(TEMP, 0x02)), BA02)\n
+    Store (DerefOf(Index(TEMP, 0x03)), BA03)\n
+    Store (DerefOf(Index(TEMP, 0x04)), BA04)\n
+    Store (DerefOf(Index(TEMP, 0x05)), BA05)\n
+    Store (DerefOf(Index(TEMP, 0x06)), BA06)\n
+    Store (DerefOf(Index(TEMP, 0x07)), BA07)\n
+    Store (DerefOf(Index(TEMP, 0x08)), BA08)\n
+    Store (DerefOf(Index(TEMP, 0x09)), BA09)\n
+    Store (DerefOf(Index(TEMP, 0x0A)), BA0A)\n
+    Store (DerefOf(Index(TEMP, 0x0B)), BA0B)\n
+    Store (DerefOf(Index(TEMP, 0x0C)), BA0C)\n
+    Store (DerefOf(Index(TEMP, 0x0D)), BA0D)\n
+    Store (DerefOf(Index(TEMP, 0x0E)), BA0E)\n
+    Store (DerefOf(Index(TEMP, 0x0F)), BA0F)\n
+    Store (DerefOf(Index(TEMP, 0x10)), BA10)\n
+    Store (DerefOf(Index(TEMP, 0x11)), BA11)\n
+    Store (DerefOf(Index(TEMP, 0x12)), BA12)\n
+    Store (DerefOf(Index(TEMP, 0x13)), BA13)\n
+    Store (DerefOf(Index(TEMP, 0x14)), BA14)\n
+    Store (DerefOf(Index(TEMP, 0x15)), BA15)\n
+    Store (DerefOf(Index(TEMP, 0x16)), BA16)\n
+    Store (DerefOf(Index(TEMP, 0x17)), BA17)\n
+    Store (DerefOf(Index(TEMP, 0x18)), BA18)\n
+    Store (DerefOf(Index(TEMP, 0x19)), BA19)\n
+    Store (DerefOf(Index(TEMP, 0x1A)), BA1A)\n
+    Store (DerefOf(Index(TEMP, 0x1B)), BA1B)\n
+    Store (DerefOf(Index(TEMP, 0x1C)), BA1C)\n
+    Store (DerefOf(Index(TEMP, 0x1D)), BA1D)\n
+    Store (DerefOf(Index(TEMP, 0x1E)), BA1E)\n
+    Store (DerefOf(Index(TEMP, 0x1F)), BA1F)\n
+}\n
+end;
+
+into device label EC0 code_regex BDAT,\s+256 replace_matched 
+begin
+//BDAT, 256,\n
+BA00,8,BA01,8,BA02,8,BA03,8,\n
+BA04,8,BA05,8,BA06,8,BA07,8,\n
+BA08,8,BA09,8,BA0A,8,BA0B,8,\n
+BA0C,8,BA0D,8,BA0E,8,BA0F,8,\n
+BA10,8,BA11,8,BA12,8,BA13,8,\n
+BA14,8,BA15,8,BA16,8,BA17,8,\n
+BA18,8,BA19,8,BA1A,8,BA1B,8,\n
+BA1C,8,BA1D,8,BA1E,8,BA1F,8\n
+end;
+
+into method label SMBR code_regex \(BDAT, replaceall_matched begin (RDBA(), end;
+into method label SMBR code_regex Store\s\((.*),\sBDAT\) replaceall_matched begin WRBA(%1) end;
+into method label SMBW code_regex Store\s\((.*),\sBDAT\) replaceall_matched begin WRBA(%1) end;
+into method label ECSB code_regex Store\s\((.*),\sBDAT\) replaceall_matched begin WRBA(%1) end;
+into method label ECSB code_regex \(BDAT, replaceall_matched begin (RDBA(), end;
+
+
+into device label EC0 insert
+begin
+Method (RDBB, 0, Serialized)\n
+{\n
+    Name (TEMP, Buffer(0x20) { })\n
+    Store (BB00, Index(TEMP, 0x00))\n
+    Store (BB01, Index(TEMP, 0x01))\n
+    Store (BB02, Index(TEMP, 0x02))\n
+    Store (BB03, Index(TEMP, 0x03))\n
+    Store (BB04, Index(TEMP, 0x04))\n
+    Store (BB05, Index(TEMP, 0x05))\n
+    Store (BB06, Index(TEMP, 0x06))\n
+    Store (BB07, Index(TEMP, 0x07))\n
+    Store (BB08, Index(TEMP, 0x08))\n
+    Store (BB09, Index(TEMP, 0x09))\n
+    Store (BB0A, Index(TEMP, 0x0A))\n
+    Store (BB0B, Index(TEMP, 0x0B))\n
+    Store (BB0C, Index(TEMP, 0x0C))\n
+    Store (BB0D, Index(TEMP, 0x0D))\n
+    Store (BB0E, Index(TEMP, 0x0E))\n
+    Store (BB0F, Index(TEMP, 0x0F))\n
+    Store (BB10, Index(TEMP, 0x10))\n
+    Store (BB11, Index(TEMP, 0x11))\n
+    Store (BB12, Index(TEMP, 0x12))\n
+    Store (BB13, Index(TEMP, 0x13))\n
+    Store (BB14, Index(TEMP, 0x14))\n
+    Store (BB15, Index(TEMP, 0x15))\n
+    Store (BB16, Index(TEMP, 0x16))\n
+    Store (BB17, Index(TEMP, 0x17))\n
+    Store (BB18, Index(TEMP, 0x18))\n
+    Store (BB19, Index(TEMP, 0x19))\n
+    Store (BB1A, Index(TEMP, 0x1A))\n
+    Store (BB1B, Index(TEMP, 0x1B))\n
+    Store (BB1C, Index(TEMP, 0x1C))\n
+    Store (BB1D, Index(TEMP, 0x1D))\n
+    Store (BB1E, Index(TEMP, 0x1E))\n
+    Store (BB1F, Index(TEMP, 0x1F))\n
+    Return (TEMP)\n
+}\n
+end;
+
+into device label EC0 insert
+begin
+Method (WRBB, 1, Serialized)\n
+{\n
+    Name (TEMP, Buffer(0x20) { })\n
+    Store (Arg0, TEMP)\n
+    Store (DerefOf(Index(TEMP, 0x00)), BB00)\n
+    Store (DerefOf(Index(TEMP, 0x01)), BB01)\n
+    Store (DerefOf(Index(TEMP, 0x02)), BB02)\n
+    Store (DerefOf(Index(TEMP, 0x03)), BB03)\n
+    Store (DerefOf(Index(TEMP, 0x04)), BB04)\n
+    Store (DerefOf(Index(TEMP, 0x05)), BB05)\n
+    Store (DerefOf(Index(TEMP, 0x06)), BB06)\n
+    Store (DerefOf(Index(TEMP, 0x07)), BB07)\n
+    Store (DerefOf(Index(TEMP, 0x08)), BB08)\n
+    Store (DerefOf(Index(TEMP, 0x09)), BB09)\n
+    Store (DerefOf(Index(TEMP, 0x0A)), BB0A)\n
+    Store (DerefOf(Index(TEMP, 0x0B)), BB0B)\n
+    Store (DerefOf(Index(TEMP, 0x0C)), BB0C)\n
+    Store (DerefOf(Index(TEMP, 0x0D)), BB0D)\n
+    Store (DerefOf(Index(TEMP, 0x0E)), BB0E)\n
+    Store (DerefOf(Index(TEMP, 0x0F)), BB0F)\n
+    Store (DerefOf(Index(TEMP, 0x10)), BB10)\n
+    Store (DerefOf(Index(TEMP, 0x11)), BB11)\n
+    Store (DerefOf(Index(TEMP, 0x12)), BB12)\n
+    Store (DerefOf(Index(TEMP, 0x13)), BB13)\n
+    Store (DerefOf(Index(TEMP, 0x14)), BB14)\n
+    Store (DerefOf(Index(TEMP, 0x15)), BB15)\n
+    Store (DerefOf(Index(TEMP, 0x16)), BB16)\n
+    Store (DerefOf(Index(TEMP, 0x17)), BB17)\n
+    Store (DerefOf(Index(TEMP, 0x18)), BB18)\n
+    Store (DerefOf(Index(TEMP, 0x19)), BB19)\n
+    Store (DerefOf(Index(TEMP, 0x1A)), BB1A)\n
+    Store (DerefOf(Index(TEMP, 0x1B)), BB1B)\n
+    Store (DerefOf(Index(TEMP, 0x1C)), BB1C)\n
+    Store (DerefOf(Index(TEMP, 0x1D)), BB1D)\n
+    Store (DerefOf(Index(TEMP, 0x1E)), BB1E)\n
+    Store (DerefOf(Index(TEMP, 0x1F)), BB1F)\n
+}\n
+end;
+
+into device label EC0 code_regex BDA2,\s+256 replace_matched 
+begin
+//BDA2, 256,\n
+BB00,8,BB01,8,BB02,8,BB03,8,\n
+BB04,8,BB05,8,BB06,8,BB07,8,\n
+BB08,8,BB09,8,BB0A,8,BB0B,8,\n
+BB0C,8,BB0D,8,BB0E,8,BB0F,8,\n
+BB10,8,BB11,8,BB12,8,BB13,8,\n
+BB14,8,BB15,8,BB16,8,BB17,8,\n
+BB18,8,BB19,8,BB1A,8,BB1B,8,\n
+BB1C,8,BB1D,8,BB1E,8,BB1F,8\n
+end;
+
+into method label SMBR code_regex \(BDA2, replaceall_matched begin (RDBB(), end;
+into method label SMBR code_regex Store\s\((.*),\sBDA2\) replaceall_matched begin WRBB(%1) end;
+into method label SMBW code_regex Store\s\((.*),\sBDA2\) replaceall_matched begin WRBB(%1) end;
+into method label ECSB code_regex Store\s\((.*),\sBDA2\) replaceall_matched begin WRBB(%1) end;
+into method label ECSB code_regex \(BDA2, replaceall_matched begin (RDBB(), end;
+
+# additional work for _BIX method present in some ASUS laptops
+
+into device label EC0 code_regex B0C3,\s+16 replace_matched begin XC30,8,XC31,8 end;
+into device label EC0 code_regex B1C3,\s+16 replace_matched begin YC30,8,YC31,8 end;
+into_all method label _BIX code_regex \(\^\^LPCB\.EC0\.B0C3, replaceall_matched begin (B1B2(^^LPCB.EC0.XC30,^^LPCB.EC0.XC31), end;
+into_all method label _BIX code_regex \(\^\^LPCB\.EC0\.B1C3, replaceall_matched begin (B1B2(^^LPCB.EC0.YC30,^^LPCB.EC0.YC31), end;
+into_all method label _BIX code_regex \(B0C3, replaceall_matched begin (B1B2(XC30,XC31), end;
+
+# or could remove the _BIX method if it turns out not to work
+
+#into_all method label _BIX remove_entry;
+
+#fix logic error in some newer ASUS DSDTs (issue #23)
+into method label FBST code_regex If\s\(CHGS\s\(Zero\)\)[\s]+\{[\s]+Store\s\(0x02,\sLocal0\)[\s]+\}[\s]+Else[\s]+\{[\s]+Store\s\(One,\sLocal0\)[\s]+\} replaceall_matched
+begin
+If (CHGS (Zero))\n
+{\n
+    Store (0x02, Local0)\n
+}\n
+Else\n
+{\n
+    Store (Zero, Local0)\n
+}
+end;
+
+
+#Patch 13 "Shutdown Fix v2"
+#Maintained by: RehabMan for: Laptop Patches
+#system_Shutdown2.txt
+
+#  Shutdown fix v2
+into method label _PTS code_regex ([\s\S]*) replace_matched
+begin
+If (LNotEqual(Arg0,5)) {\n
+%1\n
+}\n
+end;
+
+
+#Patch 14 “USB3 _PRW 0x6D (instant wake)”
+#Maintained by: RehabMan for: Laptop Patches
+#usb_prw_0x6d_xhc_skl.txt
+
+# remove _PRW methods to prevent instant wake
+
+# delete any existing XHC1 device
+into device label XHC1 name_adr 0x00140000 remove_entry;
+
+# if _PRW objects are methods
+into method label _PRW parent_adr 0x00140000 remove_entry;
+into method label _PRW parent_adr 0x00140001 remove_entry;
+into method label _PRW parent_adr 0x001F0003 remove_entry;
+# some other LAN cards use 0x00190000
+into method label _PRW parent_adr 0x00190000 remove_entry;
+into method label _PRW parent_adr 0x001F0006 remove_entry;
+
+# if _PRW methods are stuffed into a separate scope
+into method label _PRW parent_label _SB.PCI0.EHC1 remove_entry;
+into method label _PRW parent_label _SB.PCI0.EHC2 remove_entry;
+into method label _PRW parent_label _SB.PCI0.XHC remove_entry;
+into method label _PRW parent_label \_SB.PCI0.EHC1 remove_entry;
+into method label _PRW parent_label \_SB.PCI0.EHC2 remove_entry;
+into method label _PRW parent_label \_SB.PCI0.XHC remove_entry;
+
+# if _PRW objects are names
+into device name_adr 0x00140000 code_regex Name.*_PRW.*\n.*\n.*\n.*\n.*\}\) remove_matched;
+into device name_adr 0x00140001 code_regex Name.*_PRW.*\n.*\n.*\n.*\n.*\}\) remove_matched;
+into device name_adr 0x001F0003 code_regex Name.*_PRW.*\n.*\n.*\n.*\n.*\}\) remove_matched;
+into device name_adr 0x00190000 code_regex Name.*_PRW.*\n.*\n.*\n.*\n.*\}\) remove_matched;
+into device name_adr 0x001F0006 code_regex Name.*_PRW.*\n.*\n.*\n.*\n.*\}\) remove_matched;
+# some _PRW have three entries in the Package
+into device name_adr 0x00140000 code_regex Name.*_PRW.*\n.*\n.*\n.*\n.*\n.*\}\) remove_matched;
+into device name_adr 0x00140001 code_regex Name.*_PRW.*\n.*\n.*\n.*\n.*\n.*\}\) remove_matched;
+into device name_adr 0x001F0003 code_regex Name.*_PRW.*\n.*\n.*\n.*\n.*\n.*\}\) remove_matched;
+into device name_adr 0x00190000 code_regex Name.*_PRW.*\n.*\n.*\n.*\n.*\n.*\}\) remove_matched;
+into device name_adr 0x001F0006 code_regex Name.*_PRW.*\n.*\n.*\n.*\n.*\n.*\}\) remove_matched;
+
+# seems to work better if _PRW is present, but returns 0 (original was 3) for sleep state
+# Note: These are methods because some Skylake DSDT call _PRW as a method for no reason
+into device name_adr 0x00140000 insert begin Method(_PRW) { Return(Package() { 0x6D, 0 }) } end;
+into device name_adr 0x00140001 insert begin Method(_PRW) { Return(Package() { 0x6D, 0 }) } end;
+into device name_adr 0x001F0003 insert begin Method(_PRW) { Return(Package() { 0x6D, 0 }) } end;
+into device name_adr 0x00190000 insert begin Method(_PRW) { Return(Package() { 0x6D, 0 }) } end;
+into device name_adr 0x001F0006 insert begin Method(_PRW) { Return(Package() { 0x6D, 0 }) } end;
+
+# Insert Apple USB properties into USB 3.0 XHC
+into method label _DSM parent_adr 0x00140000 remove_entry;
+into device name_adr 0x00140000 insert
+begin
+Method (_DSM, 4, NotSerialized)\n
+{\n
+    If (LEqual (Arg2, Zero)) { Return (Buffer() { 0x03 } ) }\n
+    Return (Package()\n
+    {\n
+        "subsystem-id", Buffer() { 0x70, 0x72, 0x00, 0x00 },\n
+        "subsystem-vendor-id", Buffer() { 0x86, 0x80, 0x00, 0x00 },\n
+        "AAPL,current-available", 2100,\n
+        "AAPL,current-extra", 2200,\n
+        "AAPL,current-extra-in-sleep", 1600,\n
+        "AAPL,device-internal", 0x02,\n
+        "AAPL,max-port-current-in-sleep", 2100,\n
+    })\n
+}\n
+end;
+
+#Patch 15 "Rename GFX0 to IGPU"
+#Maintained by: RehabMan for: Laptop Patches
+#graphics_Rename-GFX0.txt
+#into_all all code_regex GFX0\. replaceall_matched begin IGPU. end;
+#into_all all code_regex \.GFX0 replaceall_matched begin .IGPU end;
+#into_all all label GFX0 set_label begin IGPU end;
+#into_all all label _SB.PCI0.GFX0 set_label begin _SB.PCI0.IGPU end;
+
+
+#Patch 16 “Skylake LPC”
+#Maintained by: RehabMan for: Laptop Patches
+#misc_Skylake-LPC.txt
+
+# inject "compatible" with recognized series-100 LPC device-id
+into method label _DSM parent_adr 0x001F0000 remove_entry;
+into device name_adr 0x001F0000 insert
+begin
+Method (_DSM, 4, NotSerialized)\n
+{\n
+    If (LEqual (Arg2, Zero)) { Return (Buffer() { 0x03 } ) }\n
+    Return (Package()\n
+    {\n
+        "compatible", "pci8086,9cc1",\n
+    })\n
+}\n
+end;
+
+
+#Patch 17 "ALS Haswell" FROM Asus fn key link (DSDT Patch)
+# Patch by EMlyDinEsH (www.osxlatitude.com)
+# Enables Asus Ambient Light Sensor to work using my AsusNBFnKeys driver
+
+# Modify method RALS which reads ALS to work with my driver
+into Method label RALS replace_content begin
+                If (ALAE)\n
+                {\n
+                    Store (RRAM (0x02A3), Local0)\n
+                    Store (RRAM (0x02A4), Local1)\n
+                    ShiftLeft (Local0, 0x08, Local0)\n
+                    Add (Local0, Local1, Local0)\n
+                    Multiply (Local0, 0x03E8, Local1)\n
+                    Divide (Local1, ALSA, Local2, Local3)\n
+                }\n
+                Else\n
+                {\n
+                    Return (0x012C)\n
+                }\n
+                Return (Local3)\n            
+ end;
+
+# Modify ALS notifier methods _QDD and _QCD methods to notify event
+into Method label _QDD replace_content begin
+             Notify (ALS, 0x80)\n
+             If (ATKP)\n
+             {\n
+                 ^^^^ATKD.IANE (0xC6)\n
+             }
+end;
+
+into Method label _QCD replace_content begin
+            Notify (ALS, 0x80)\n
+             If (ATKP)\n
+             {\n
+                 ^^^^ATKD.IANE (0xC7)\n
+             }
+end;
+
+# Insert method ALSS into ATKD device for reading ambient illuminance values in my driver
+into method label ALSS parent_label ATKD remove_entry;
+into device label ATKD insert begin
+Method (ALSS, 0, NotSerialized)\n
+            {\n
+                Return (^^PCI0.LPCB.EC0.RALS ())\n
+            }
+end;
+
+
+
+#Patch 18 "Keyboard backlight 4 level Haswell" from Asus fn key link (DSDT Patch)
+# Patch by EMlyDinEsH (www.osxlatitude.com)
+
+#
+# Enables 4 keyboard backlight levels control to work using my kexts AsusNBFnKeys and Smart Touchpad
+# This patch meant for Kabylake notebooks and may work for others.
+#
+
+# Insert backlight auto off control sync field for Smart Touchpad and Asus Fn Keys driver
+into device label ATKD code_regex Name\s\(BOFF,\sZero\) remove_matched;
+into device label ATKD insert begin Name (BOFF, Zero) end;
+
+# Insert method SKBL for setting keyboard backlight level
+into method label SKBL parent_label ATKD remove_entry;
+into Device label ATKD insert begin
+Method (SKBL, 1, NotSerialized)\n
+            {\n
+                If (Or (LEqual (Arg0, 0xED), LEqual (Arg0, 0xFD)))\n
+                {\n
+                    If (And (LEqual (Arg0, 0xED), LEqual (BOFF, 0xEA)))\n
+                    {\n
+                        Store (Zero, Local0)\n
+                        Store (Arg0, BOFF)\n
+                    }\n
+                    Else\n
+                    {\n
+                        If (And (LEqual (Arg0, 0xFD), LEqual (BOFF, 0xFA)))\n
+                        {\n
+                            Store (Zero, Local0)\n
+                            Store (Arg0, BOFF)\n
+                        }\n
+                        Else\n
+                        {\n
+                            Return (BOFF)\n
+                        }\n
+                    }\n
+                }\n
+                Else\n
+                {\n
+                    If (Or (LEqual (Arg0, 0xEA), LEqual (Arg0, 0xFA)))\n
+                    {\n
+                        Store (Arg0, BOFF)\n
+                    }\n
+                    Else\n
+                    {\n
+			Store (And (Arg0, 0x7F), KBLV)\n
+                    }\n
+                }\n
+		Store (0x0900, Local0)\n
+         	Add (Local0, 0xF0, Local0)\n
+         	\_SB.PCI0.LPCB.EC0.WRAM (Local0, KBLV)\n
+        	Store (DerefOf (Index (PWKB, KBLV)), Local0)\n
+           	\_SB.PCI0.LPCB.EC0.ST9E (0x1F, 0xFF, Local0)\n
+                Return (Local0)\n
+            }\n
+end;
+
+# Remove existing 16 backlight levels list if exist
+into device label ATKD code_regex Name\s\(KBPW,\sBuffer\s\(0x10\)\s*\n\s*\{\s*\/\*\s0000\s\*\/\s*0x00,\s0x11,\s0x22,\s0x33,\s0x44,\s0x55,\s0x66,\s0x77,\s*\/\*\s0008\s\*\/\s*\s0x88,\s0x99,\s0xAA,\s0xBB,\s0xCC,\s0xDD,\s0xEE,\s0xFF\s*\}\) remove_matched;
+# Remove existing 4 backlight levels list if exist
+into device label ATKD code_regex Name\s\(PWKB,\sBuffer\s\(0x04\)\s*\n\s*\{\s*0x00,\s0x55,\s0xAA,\s0xFF\s*\}\) remove_matched;
+
+# Insert 4 backlight levels
+into Device label ATKD insert begin
+Name (PWKB, Buffer (0x04)\n
+            {\n
+               0x00, 0x55, 0xAA, 0xFF\n
+            })\n
+end;
+
+
+# Insert method GKBL for reading keyboard backlight level
+into method label GKBL parent_label ATKD remove_entry;
+into Device label ATKD insert begin
+Method (GKBL, 1, NotSerialized)\n
+            {\n
+               If (LEqual (Arg0, 0xFF))\n
+                {\n
+                    Return (BOFF)\n
+                }\n
+
+                Return (KBLV)\n
+            }\n
+end;
+
+
+
+#Patch 19 "Fn key birghtness" from Asus FN Key link
+#into Method label _Q0E replace_content begin 
+#             If (ATKP)\n
+#                {\n
+#                  ^^^^ATKD.IANE (0x20)\n
+#                }
+#end;
+
+# Replacing method _Q0F with code for Brightness up key to work
+#into Method label _Q0F replace_content begin 
+#             If (ATKP)\n
+#                {\n
+#                   ^^^^ATKD.IANE (0x10)\n
+#                }
+#end;
+#Patch RehabMan Brightness Keys
+into method label _Q0E replace_content
+begin
+// Brightness Down\n
+    Notify(\_SB.PCI0.LPCB.PS2K, 0x0405)\n
+end;
+into method label _Q0F replace_content
+begin
+// Brightness Up\n
+    Notify(\_SB.PCI0.LPCB.PS2K, 0x0406)\n
+end;
+
+
+#Patch 20 Audio ID 3
+#Maintained by: RehabMan for: Laptop Patches
+#audio_HDEF-layout3.txt
+
+# Note: Change your layout ID if you need something different
+# Note: "hda-gfx" is not needed with Haswell and should probably be removed
+
+#   Inject Audio info
+#into method label _DSM parent_label HDAS remove_entry;
+#into device label HDAS insert
+#begin
+#Method (_DSM, 4, NotSerialized)\n
+#{\n
+#    If (LEqual (Arg2, Zero)) { Return (Buffer() { 0x03 } ) }\n
+#    Return (Package()\n
+#    {\n
+#        "layout-id", Buffer() { 3, 0x00, 0x00, 0x00 },\n
+#        "hda-gfx", Buffer() { "onboard-1" },\n
+#        "PinConfigurations", Buffer() { },\n
+#        //"MaximumBootBeepVolume", 77,\n
+#    })\n
+#}\n
+#end;
+
+
+# Patch Michael 21 Fix Bluetooth ans Wabcan after Sleep
+into method label _UPC parent_label _SB.PCI0.XHC.RHUB.HS05 code_regex Zero replace_matched begin 0xFF end;
+into method label _UPC parent_label _SB.PCI0.XHC.RHUB.HS08 code_regex Zero replace_matched begin 0xFF end;
+
+
+# Patch Michael 16 GPIO Pinning for ELAN1200 by anonymous writer from www.hackintosh-forum.de work with VoodooI2C-v2.0.1
+# Confirmed working on ASUS UX430UAK
+
+#into method label _STA parent_label GPI0 replace_content begin
+#Return (0x0F)
+#end;
+
+#into method label _CRS parent_label ETPD remove_entry; 
+
+
+
+#Patch 22 Led Sleep Problem Patch
+# Lid sleep fix for newer Asus laptops
+# Also fixes Fn+F7
+# Credits: Qwerty12 and fvl
+
+into device label EC0 insert
+begin
+Method (ECCM, 4, Serialized)\n
+{\n
+    If (ECAV ())\n
+    {\n
+        Acquire (MUEC, 0xFFFF)\n
+            Store (Arg0, CDT1)\n
+            Store (Arg1, CDT2)\n
+            Store (Arg2, CDT3)\n
+            Store (Arg3, CMD1)\n
+            Store (0x7F, Local0)\n
+            While (LAnd (Local0, CMD1))\n
+            {\n
+                Sleep (One)\n
+                    Decrement (Local0)\n
+            }\n
+\n
+        If (LEqual (CMD1, Zero))\n
+        {\n
+            Store (CDT1, Local0)\n
+        }\n
+        Else\n
+        {\n
+            Store (Ones, Local0)\n
+        }\n
+\n
+        Release (MUEC)\n
+            Return (Local0)\n
+    }\n
+\n
+    Return (Ones)\n
+}\n
+\n
+Method (RPUN, 1, Serialized)\n
+{\n
+    Return (ECCM (0x87, Zero, Arg0, 0xB6))\n
+}\n
+\n
+Method (SPUN, 2, Serialized)\n
+{\n
+    If (Arg1)\n
+    {\n
+        ECCM (0x87, 0x20, Arg0, 0xB6)\n
+    }\n
+    Else\n
+    {\n
+        ECCM (0x87, 0x40, Arg0, 0xB6)\n
+    }\n
+}\n
+end;
+
+# Use newly defined methods to enable lid sleep
+into method label GLID code_regex RPIN replaceall_matched begin RPUN end;
+into method label _LID code_regex RPIN replaceall_matched begin RPUN end;
+# Enable Fn+F7 to turn on/off display
+into method label _Q10 code_regex RPIN replaceall_matched begin RPUN end;
+into method label _Q10 code_regex SPIN replaceall_matched begin SPUN end;
+
+
+#Patch 18 Renam Paches
+#change HDAS to HDEF
+#into_all all code_regex HDAS replaceall_matched begin HDEF end;
+#into_all all label  HDAS set_label begin HDEF end;
+
+#change SAT0 to SATA
+#into_all all code_regex SAT0 replaceall_matched begin SATA end;
+#into_all all label  SAT0 set_label begin SATA end;
+#into_all all label _SB.PCI0.SAT0.VOL0 set_label begin _SB.PCI0.SATA.VOL0 end;
+#into_all all label _SB.PCI0.SAT0 set_label begin _SB.PCI0.SATA end;
+
+#change MEI to IMEI
+#into_all all code_regex MEI replaceall_matched begin IMEI end;
+#into_all all label  MEI set_label begin IMEI end;
+
+
+#Maintained by: RehabMan for: ACPIKeyboard.kext
+#patch.txt
+
+#Patch 23 Michael  Belegung ACPI Tasten
+# This patch serves to provide a catalyst to load ACPIKeyboard.kext
+# and it also provides a sink to send notifications to in
+# order to send messages to the kext to simulate keystrokes.
+into device label RMKB remove_entry;
+into definitionblock code_regex . insert
+begin
+Device (RMKB)\n
+{\n
+    Name(_HID, "RMKB0000")\n
+}\n
+end;
+
+into method label _Q0A replace_content
+begin
+// Zz Sleep Taste\n
+            Notify (RMKB, 0x2158)\n
+            Notify (RMKB, 0x2258)\n
+end;
+
+into method label _Q0B replace_content
+begin
+// Zz Sleep Taste\n
+            Notify (RMKB, 0x2159)\n
+            Notify (RMKB, 0x2259)\n
+end;
+
+into method label _Q76 replace_content
+begin
+// Zz Sleep Taste\n
+            Notify (RMKB, 0x215B)\n
+            Notify (RMKB, 0x225B)\n
+end;
+
+#into method label _QD4 replace_content
+#begin
+#// Bildschierm aus Taste\n
+#            Notify (RMKB, 0x2155)\n
+#            Notify (RMKB, 0x2255)\n
+#end;
+into method label _Q10 replace_content
+begin
+// Bildschierm aus Taste 2\n
+            Notify (RMKB, 0x2155)\n
+            Notify (RMKB, 0x2255)\n
+end;
+
+into method label _Q11 replace_content
+begin
+// Bildschierm umschalter\n
+            Notify (RMKB, 0x2156)\n
+            Notify (RMKB, 0x2256)\n
+end;
+
+into method label _Q12 replace_content
+begin
+// Trackpad aus\n
+            Notify (RMKB, 0x2157)\n
+            Notify (RMKB, 0x2257)\n
+end;
+
+# _OSI(WIN7) Wird für die Brightness Tasten benötigt.
+into method label OSID code_regex _OSI\s+\(WIN7\) replaceall_matched begin LOr(_OSI(WIN7),_OSI("Darwin")) end;

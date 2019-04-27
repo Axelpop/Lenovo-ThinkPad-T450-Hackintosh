@@ -1,0 +1,94 @@
+116:671  44:545  Found UEFI Acpi 2.0 RSDP at CADFE014
+116:671  0:000  Saving ACPI tables from RSDP CADFE014 to EFI\CLOVER\ACPI\origin ...
+116:671  0:000   CADFE014: 'RSD PTR ', Rev: 2 (Acpi 2.0 or newer), Len: 36 -> RSDP.aml
+116:686  0:015    (Xsdt: CADFE1C0, Rsdt: CADFE0FC)
+116:686  0:000    CADFE1C0: 'XSDT', 'TP-JB', Rev: 1, Len: 228 -> XSDT.aml
+116:695  0:009    CADFE0FC: 'RSDT', 'TP-JB', Rev: 1, Len: 132 -> RSDT.aml
+116:705  0:009    Tables in Xsdt: 24
+116:705  0:000    0. CADF8000: 'FACP', 'TP-JB', Rev: 5, Len: 268 -> FACP.aml
+116:713  0:008        (Dsdt: CADE3000, Facs: CAD68000, XDsdt: CADE3000, XFacs: 0)
+116:713  0:000        CADE3000: 'DSDT', 'TP-JB', Rev: 2, Len: 69541 -> DSDT.aml
+116:722  0:009        CAD68000: 'FACS', Ver: 2, Len: 64 -> FACS.aml
+116:730  0:008    1. CADFD000: 'SLIC', 'TP-JB', Rev: 1, Len: 374 -> SLIC.aml
+116:740  0:009    2. CADFC000: 'ASF!', 'TP-JB', Rev: 32, Len: 165 -> ASF!.aml
+116:749  0:008    3. CADFB000: 'HPET', 'TP-JB', Rev: 1, Len: 56 -> HPET.aml
+116:757  0:008    4. CADFA000: 'ECDT', 'TP-JB', Rev: 1, Len: 82 -> ECDT.aml
+116:765  0:008    5. CADF7000: 'APIC', 'TP-JB', Rev: 1, Len: 152 -> APIC.aml
+116:773  0:007    6. CADF6000: 'MCFG', 'TP-JB', Rev: 1, Len: 60 -> MCFG.aml
+116:781  0:008    7. CADF5000: 'SSDT', 'TP-SSDT1', Rev: 1, Len: 51 -> SSDT-0.aml
+116:790  0:008    8. CADF4000: 'SSDT', 'TP-SSDT2', Rev: 1, Len: 1158 -> SSDT-1.aml
+116:798  0:008    9. CADE2000: 'SSDT', 'SataAhci', Rev: 1, Len: 2507 -> SSDT-2.aml
+116:806  0:008    10. CADE1000: 'SSDT', 'Rmv_Batt', Rev: 1, Len: 338 -> SSDT-3.aml
+116:814  0:007    11. CADE0000: 'SSDT', 'Cpu0Ist', Rev: 1, Len: 1737 -> SSDT-4.aml
+116:822  0:008    12. CADDF000: 'SSDT', 'CpuSsdt', Rev: 2, Len: 2932 -> SSDT-5.aml
+116:830  0:008    13. CADDE000: 'SSDT', 'CtdpB', Rev: 2, Len: 873 -> SSDT-6.aml
+116:839  0:008    14. CADDC000: 'SSDT', 'SaSsdt', Rev: 1, Len: 5237 -> SSDT-7.aml
+116:847  0:008    15. CADDB000: 'SSDT', 'CppcTabl', Rev: 2, Len: 916 -> SSDT-8.aml
+116:855  0:008    16. CADDA000: 'PCCT', 'TP-JB', Rev: 5, Len: 110 -> PCCT.aml
+116:863  0:007    17. CADD9000: 'SSDT', 'Cpc_Tabl', Rev: 2, Len: 2756 -> SSDT-9.aml
+116:872  0:008    18. CADD8000: 'UEFI', 'TP-JB', Rev: 1, Len: 66 -> UEFI.aml
+116:880  0:007    19. CAD42000: 'MSDM', 'TP-JB', Rev: 3, Len: 85 -> MSDM.aml
+116:888  0:008    20. CADD7000: 'BATB', 'TP-JB', Rev: 2, Len: 74 -> BATB.aml
+116:896  0:008    21. CADD6000: 'FPDT', 'TP-JB', Rev: 1, Len: 100 -> FPDT.aml
+116:905  0:008    22. CADD5000: 'UEFI', 'TP-JB', Rev: 1, Len: 798 -> UEFI.aml
+116:913  0:008    23. CADD4000: 'BGRT', 'TP-JB', Rev: 1, Len: 56 -> BGRT.aml
+116:918  0:005    Tables in Rsdt: 24
+116:918  0:000    0. CADF8000: 'FACP', 'TP-JB', Rev: 5, Len: 268
+116:918  0:000        (Dsdt: CADE3000, Facs: CAD68000, XDsdt: CADE3000, XFacs: 0)
+116:918  0:000        CADE3000: 'DSDT', 'TP-JB', Rev: 2, Len: 69541
+116:918  0:000        CAD68000: 'FACS', Ver: 2, Len: 64
+116:918  0:000    1. CADFD000: 'SLIC', 'TP-JB', Rev: 1, Len: 374
+116:918  0:000    2. CADFC000: 'ASF!', 'TP-JB', Rev: 32, Len: 165
+116:918  0:000    3. CADFB000: 'HPET', 'TP-JB', Rev: 1, Len: 56
+116:918  0:000    4. CADFA000: 'ECDT', 'TP-JB', Rev: 1, Len: 82
+116:918  0:000    5. CADF7000: 'APIC', 'TP-JB', Rev: 1, Len: 152
+116:918  0:000    6. CADF6000: 'MCFG', 'TP-JB', Rev: 1, Len: 60
+116:918  0:000    7. CADF5000: 'SSDT', 'TP-SSDT1', Rev: 1, Len: 51
+116:918  0:000    8. CADF4000: 'SSDT', 'TP-SSDT2', Rev: 1, Len: 1158
+116:918  0:000    9. CADE2000: 'SSDT', 'SataAhci', Rev: 1, Len: 2507
+116:918  0:000    10. CADE1000: 'SSDT', 'Rmv_Batt', Rev: 1, Len: 338
+116:918  0:000    11. CADE0000: 'SSDT', 'Cpu0Ist', Rev: 1, Len: 1737
+116:918  0:000    12. CADDF000: 'SSDT', 'CpuSsdt', Rev: 2, Len: 2932
+116:918  0:000    13. CADDE000: 'SSDT', 'CtdpB', Rev: 2, Len: 873
+116:918  0:000    14. CADDC000: 'SSDT', 'SaSsdt', Rev: 1, Len: 5237
+116:918  0:000    15. CADDB000: 'SSDT', 'CppcTabl', Rev: 2, Len: 916
+116:918  0:000    16. CADDA000: 'PCCT', 'TP-JB', Rev: 5, Len: 110
+116:918  0:000    17. CADD9000: 'SSDT', 'Cpc_Tabl', Rev: 2, Len: 2756
+116:918  0:000    18. CADD8000: 'UEFI', 'TP-JB', Rev: 1, Len: 66
+116:918  0:000    19. CAD42000: 'MSDM', 'TP-JB', Rev: 3, Len: 85
+116:918  0:000    20. CADD7000: 'BATB', 'TP-JB', Rev: 2, Len: 74
+116:918  0:000    21. CADD6000: 'FPDT', 'TP-JB', Rev: 1, Len: 100
+116:918  0:000    22. CADD5000: 'UEFI', 'TP-JB', Rev: 1, Len: 798
+116:918  0:000    23. CADD4000: 'BGRT', 'TP-JB', Rev: 1, Len: 56
+116:918  0:000  Found UEFI Acpi 1.0 RSDP at CADFE000
+116:918  0:000  Printing ACPI tables from RSDP CADFE000 ...
+116:918  0:000   CADFE000: 'RSD PTR ', Rev: 0 (Acpi 1.0), Len: 20
+116:918  0:000    (Rsdt: CADFE038)
+116:918  0:000    CADFE038: 'RSDT', 'TP-JB', Rev: 1, Len: 128
+116:918  0:000    Tables in Rsdt: 23
+116:918  0:000    0. CADF9000: 'FACP', 'TP-JB', Rev: 1, Len: 116
+116:918  0:000        (Dsdt: CADE3000, Facs: CAD68000)
+116:918  0:000        CADE3000: 'DSDT', 'TP-JB', Rev: 2, Len: 69541
+116:918  0:000        CAD68000: 'FACS', Ver: 2, Len: 64
+116:918  0:000    1. CADFC000: 'ASF!', 'TP-JB', Rev: 32, Len: 165
+116:918  0:000    2. CADFB000: 'HPET', 'TP-JB', Rev: 1, Len: 56
+116:918  0:000    3. CADFA000: 'ECDT', 'TP-JB', Rev: 1, Len: 82
+116:918  0:000    4. CADF7000: 'APIC', 'TP-JB', Rev: 1, Len: 152
+116:918  0:000    5. CADF6000: 'MCFG', 'TP-JB', Rev: 1, Len: 60
+116:918  0:000    6. CADF5000: 'SSDT', 'TP-SSDT1', Rev: 1, Len: 51
+116:918  0:000    7. CADF4000: 'SSDT', 'TP-SSDT2', Rev: 1, Len: 1158
+116:918  0:000    8. CADE2000: 'SSDT', 'SataAhci', Rev: 1, Len: 2507
+116:918  0:000    9. CADE1000: 'SSDT', 'Rmv_Batt', Rev: 1, Len: 338
+116:918  0:000    10. CADE0000: 'SSDT', 'Cpu0Ist', Rev: 1, Len: 1737
+116:918  0:000    11. CADDF000: 'SSDT', 'CpuSsdt', Rev: 2, Len: 2932
+116:918  0:000    12. CADDE000: 'SSDT', 'CtdpB', Rev: 2, Len: 873
+116:918  0:000    13. CADDC000: 'SSDT', 'SaSsdt', Rev: 1, Len: 5237
+116:918  0:000    14. CADDB000: 'SSDT', 'CppcTabl', Rev: 2, Len: 916
+116:918  0:000    15. CADDA000: 'PCCT', 'TP-JB', Rev: 5, Len: 110
+116:918  0:000    16. CADD9000: 'SSDT', 'Cpc_Tabl', Rev: 2, Len: 2756
+116:918  0:000    17. CADD8000: 'UEFI', 'TP-JB', Rev: 1, Len: 66
+116:918  0:000    18. CAD42000: 'MSDM', 'TP-JB', Rev: 3, Len: 85
+116:918  0:000    19. CADD7000: 'BATB', 'TP-JB', Rev: 2, Len: 74
+116:918  0:000    20. CADD6000: 'FPDT', 'TP-JB', Rev: 1, Len: 100
+116:918  0:000    21. CADD5000: 'UEFI', 'TP-JB', Rev: 1, Len: 798
+116:918  0:000    22. CADD4000: 'BGRT', 'TP-JB', Rev: 1, Len: 56
